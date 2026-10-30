@@ -42,7 +42,8 @@ function insertConstant(value){const before=snapshot(),text=String(value).replac
 function calcContext(){return {angle,onOpenSetup:()=>openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll}),expression:field.value.replaceAll(',','.').replaceAll(';',','),variables:{...editor.variables},ans,onAccept:(value,details)=>details?.kind==='constant'?insertConstant(value):acceptResult(value,details)}}
 function resetAll(){localStorage.removeItem(SPREADSHEET_STORAGE_KEY);resetModes();for(const name of Object.keys(editor.variables))editor.store(name,0);ans=0;field.value='';setResult('0');done=false;exact=null;decimal='0'}
 const naturalExpression=document.querySelector('#natural-expression');
-function refreshExpression(){renderNatural(naturalExpression,field.value,document.activeElement===field?field.selectionStart:null,field.selectionEnd);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
+let lastExpressionView=null;
+function refreshExpression(){const cursor=document.activeElement===field?field.selectionStart:null, end=field.selectionEnd;const signature=JSON.stringify([field.value,cursor,end]);if(signature===lastExpressionView)return;lastExpressionView=signature;renderNatural(naturalExpression,field.value,cursor,end);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
 function setResult(value){value=String(value);result.setAttribute('aria-label',value);const mixed=value.match(/^([−-]?)(\d+) (\d+)\/(\d+)$/);if(mixed){renderNatural(result,`mix(${mixed[2]};${mixed[3]};${mixed[4]})`);if(mixed[1]){const sign=document.createElement('span');sign.textContent='−';result.prepend(sign)}}else if(value.includes('/'))renderNatural(result,value);else result.textContent=value;}
 function mixedForm(value){const m=String(value).match(/^([−-]?)(\d+)\/(\d+)$/);if(!m)return value;const n=BigInt(m[2]),d=BigInt(m[3]);if(!d||n<d||n%d===0n)return value;return `${m[1]?'−':''}${n/d} ${n%d}/${d}`}
 let undoState=null,pendingNative=null,restoring=false;
@@ -101,9 +102,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.s
 
 field.addEventListener('beforeinput',()=>{if(!restoring)pendingNative=snapshot()});
 field.addEventListener('input',()=>{done=false;if(pendingNative){remember(pendingNative);pendingNative=null}});
-for(const event of ['input','keyup','click','select','focus','blur']) field.addEventListener(event,()=>queueMicrotask(refreshExpression));
-app.addEventListener('click',()=>queueMicrotask(refreshExpression));
-document.addEventListener('keydown',()=>queueMicrotask(refreshExpression));
+let expressionRefreshQueued=false;
+function queueExpressionRefresh(){if(expressionRefreshQueued)return;expressionRefreshQueued=true;queueMicrotask(()=>{expressionRefreshQueued=false;refreshExpression()})}
+for(const event of ['input','keyup','click','select','focus','blur']) field.addEventListener(event,queueExpressionRefresh);
+app.addEventListener('click',queueExpressionRefresh);
+document.addEventListener('keydown',queueExpressionRefresh);
 refreshExpression();
 
 let touchAnchor=null;

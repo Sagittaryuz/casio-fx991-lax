@@ -127,3 +127,6 @@ body{overscroll-behavior:none}
  .control-top .round-wrap:nth-child(4){left:74.3%}.control-top .round-wrap:nth-child(5){left:91.5%}
  .control-top .direction{width:15%;left:42.5%;top:35%}
 }
+
+/* The user-provided body texture, cropped inside the photographed border. */
+.face{background:#202123 url(/texture-user.webp) center / 100% 100% no-repeat}
