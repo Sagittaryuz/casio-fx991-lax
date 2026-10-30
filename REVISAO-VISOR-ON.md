@@ -1,0 +1,9 @@
+# Revisão do visor, teclas e ON
+
+Os dígitos usam os mesmos contornos vetoriais de `src/lcd-glyphs.mjs` da HP12C Platinum, reaproveitados em `src/hp-lcd-glyphs.mjs`; não se trata da fonte de texto usada pelo menu ClassWiz. Resultado e expressão usam esses segmentos mantendo texto acessível. Valores longos reduzem o tamanho e expressões podem rolar horizontalmente. A abertura da moldura fotográfica é definida por proporções medidas do próprio asset. O conjunto do visor deslocou-se exatamente 10 CSS px para baixo.
+
+Em 393×852, resultado 20,44→35,37 CSS px e legenda secundária 5,70→8,84 px; o centro do direcional está em y=260,88, igual ao ponto médio entre centros dos círculos (209,50) e OPTN (312,27), dentro de arredondamento. Em 1200×900, centros 242,37 e 340,93, direcional 291,64; em 852×393, centros 117,43 e 149,46, direcional 133,45. A posição é recalculada após redimensionamento. As quatro teclas redondas têm diâmetros iguais. O topo prateado da imagem do corpo fica fora do recorte, laterais e base permanecem. STO e M+ usam curva nos cantos inferiores externos.
+
+Por pedido específico, ON apaga expressão, resultado/Ans, variáveis e memória, desfazer, estado de modos em sessão, planilha salva e restaura configurações. Esta é uma personalização do app, não afirmação sobre o comportamento original da Casio. Não apaga caches de assets nem dados de outras aplicações. Caso o armazenamento esteja indisponível, o visor informa que não conseguiu apagar os dados salvos. AC e DEL conservam suas funções.
+
+Validação local: 53 grupos numéricos, testes de menu, frações aninhadas, matriz/vetor/estatística, modo offline e teste de ON com memória/planilha/configurações e recarga. Legendas sem overflow horizontal detectado em 320×568, 393×852, 852×393 e 1200×900. Medições e capturas são de Chromium, não de iPhone/Safari físicos; em telas baixas paisagem o tamanho é limitado pelo espaço disponível.

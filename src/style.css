@@ -144,3 +144,20 @@ body{overscroll-behavior:none}
 .direction div button:first-child{clip-path:polygon(0 0,100% 0,82% 80%,18% 80%)}
 .direction div button:last-child{clip-path:polygon(18% 20%,82% 20%,100% 100%,0 100%)}
 @media (orientation:landscape){.display-bezel{padding:1.2% 3%}}
+/* User-requested LCD, label and key geometry revisions. */
+.calculator{background-size:100% calc(100% + 12px);background-position:center -12px}
+.display-bezel{transform:translateY(10px);padding:0}
+.display-bezel>.display{position:absolute;left:6.5%;right:6.5%;top:16%;bottom:17%;height:auto;width:auto}
+.control-top .round-wrap{top:calc(2% + 10px)}
+.secondary{font-size:clamp(8px,2.25cqw,12px);height:31%;line-height:1;overflow:visible}
+.round-wrap span,.round-wrap.menu span{font-size:clamp(8px,2.2cqw,12px)}
+.natural-expression{font-size:clamp(24px,7cqw,38px)}
+.display output{font-size:clamp(30px,9cqw,50px);line-height:1.05}
+.lcd-segment{position:relative;display:inline-block;width:.62em;height:1em;color:transparent;vertical-align:-.08em;overflow:hidden}
+.lcd-segment::before{content:'';position:absolute;inset:0;background:#101919;mask:var(--digit-mask) center / contain no-repeat;-webkit-mask:var(--digit-mask) center / contain no-repeat}
+.math-selected.lcd-segment::before{background:#07110c}
+.key-row .key[data-action="store"]{border-top-left-radius:8% 14% !important;border-bottom-left-radius:42% 55% !important}
+.key-row .key[data-action="memory"]{border-bottom-right-radius:42% 55% !important}
+@media (orientation:landscape){.display-bezel{padding:0}.control-top .round-wrap{top:10px}.secondary{font-size:clamp(7px,2cqh,10px)}.round-wrap span,.round-wrap.menu span{font-size:clamp(7px,2cqh,10px)}.natural-expression{font-size:clamp(18px,6cqh,30px)}}
+/* Percent vertical padding is based on width and compresses short landscape screens. */
+.display-bezel>.display{padding:clamp(2px,.7cqh,6px) 3%}

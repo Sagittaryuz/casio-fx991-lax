@@ -1,3 +1,4 @@
+import {renderSegmentText} from './hp-digits.js';
 import './style.css';
 import './natural-display.css';
 import { renderNatural, naturalOffsetAt, fractionTarget } from './natural-display.js';
@@ -39,23 +40,23 @@ angle=settings.get().angle;mode.textContent=angle==='DEG'?'D':angle==='RAD'?'R':
 function applySetup(value,warning){angle=value.angle;mode.textContent=angle==='DEG'?'D':angle==='RAD'?'R':'G';if(done){decimal=formatNumber(ans,value).replace('.',',');if(!showExact)setResult(decimal)}if(warning)message(warning)}
 function acceptResult(value,details={}){if(details.variables){for(const [name,v] of Object.entries(details.variables))if(Object.hasOwn(editor.variables,name)&&Number.isFinite(v))editor.store(name,v);if(details.kind==='solve'&&Object.hasOwn(editor.variables,details.variable))editor.store(details.variable,value)}ans=value;decimal=formatNumber(ans,settings.get()).replace('.',',');exact=null;showExact=false;done=true;setResult(decimal)}
 function insertConstant(value){const before=snapshot(),text=String(value).replace('.',',');if(done)insert(text);else{const a=field.selectionStart??field.value.length,b=field.selectionEnd??a;const left=field.value[a-1]||'',right=field.value[b]||'';insert((/[0-9A-Za-zπ)]/.test(left)?'*':'')+text+(/[0-9A-Za-zπ(]/.test(right)?'*':''))}remember(before)}
-function calcContext(){return {angle,onOpenSetup:()=>openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll}),expression:field.value.replaceAll(',','.').replaceAll(';',','),variables:{...editor.variables},ans,onAccept:(value,details)=>details?.kind==='constant'?insertConstant(value):acceptResult(value,details)}}
-function resetAll(){localStorage.removeItem(SPREADSHEET_STORAGE_KEY);resetModes();for(const name of Object.keys(editor.variables))editor.store(name,0);ans=0;field.value='';setResult('0');done=false;exact=null;decimal='0'}
+function calcContext(){return {angle,onPowerReset:()=>perform('on'),onOpenSetup:()=>openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll}),expression:field.value.replaceAll(',','.').replaceAll(';',','),variables:{...editor.variables},ans,onAccept:(value,details)=>details?.kind==='constant'?insertConstant(value):acceptResult(value,details)}}
+function resetAll(){let storageOk=true;try{localStorage.removeItem(SPREADSHEET_STORAGE_KEY)}catch{storageOk=false}resetModes();for(const name of Object.keys(editor.variables))editor.store(name,0);ans=0;field.value='';setResult('0');done=false;exact=null;decimal='0';return storageOk}
 const naturalExpression=document.querySelector('#natural-expression');
 let lastExpressionView=null;
 function refreshExpression(){const cursor=document.activeElement===field?field.selectionStart:null, end=field.selectionEnd;const signature=JSON.stringify([field.value,cursor,end]);if(signature===lastExpressionView)return;lastExpressionView=signature;renderNatural(naturalExpression,field.value,cursor,end);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
-function setResult(value){value=String(value);result.setAttribute('aria-label',value);const mixed=value.match(/^([−-]?)(\d+) (\d+)\/(\d+)$/);if(mixed){renderNatural(result,`mix(${mixed[2]};${mixed[3]};${mixed[4]})`);if(mixed[1]){const sign=document.createElement('span');sign.textContent='−';result.prepend(sign)}}else if(value.includes('/'))renderNatural(result,value);else result.textContent=value;}
+function setResult(value){value=String(value);result.setAttribute('aria-label',value);const mixed=value.match(/^([−-]?)(\d+) (\d+)\/(\d+)$/);if(mixed){renderNatural(result,`mix(${mixed[2]};${mixed[3]};${mixed[4]})`);if(mixed[1]){const sign=document.createElement('span');sign.textContent='−';result.prepend(sign)}}else if(value.includes('/'))renderNatural(result,value);else renderSegmentText(result,value);const count=Math.max(10,value.length);result.style.fontSize=`min(clamp(20px, 9cqw, 50px), ${value.includes('/')?'4cqh':'5cqh'}, calc(75cqw / ${count*.62}))`;}
 function mixedForm(value){const m=String(value).match(/^([−-]?)(\d+)\/(\d+)$/);if(!m)return value;const n=BigInt(m[2]),d=BigInt(m[3]);if(!d||n<d||n%d===0n)return value;return `${m[1]?'−':''}${n/d} ${n%d}/${d}`}
 let undoState=null,pendingNative=null,restoring=false;
 function snapshot(){return {expression:field.value,start:field.selectionStart??0,end:field.selectionEnd??0,direction:field.selectionDirection,answer:ans,done,exact,decimal,showExact,mixedDisplay,result:result.getAttribute('aria-label')??result.textContent}}
 function restore(v){restoring=true;field.value=v.expression;field.focus({preventScroll:true});field.setSelectionRange(v.start,v.end,v.direction||'none');ans=v.answer;done=v.done;exact=v.exact;decimal=v.decimal;showExact=v.showExact;mixedDisplay=v.mixedDisplay;setResult(v.result);restoring=false;refreshExpression()}
 function remember(before){if(!restoring&&(before.expression!==field.value||before.result!==(result.getAttribute('aria-label')??result.textContent)))undoState=before}
-function perform(action){const isUndo=action==='del'&&alpha;const before=snapshot();press(action);if(!isUndo)remember(before)}
+function perform(action){const isUndo=action==='del'&&alpha;const before=snapshot();press(action);if(!isUndo&&action!=='on')remember(before)}
 
 function insert(str){if(done){field.value=/^[+*/^\-]$/.test(str)?'Ans':'';field.setSelectionRange(field.value.length,field.value.length);done=false} const start=field.selectionStart??field.value.length, end=field.selectionEnd??start;field.value=field.value.slice(0,start)+str+field.value.slice(end);field.focus();field.setSelectionRange(start+str.length,start+str.length)}
 function message(s){status.textContent=s;setTimeout(()=>status.textContent='CALCULAR',2500)}
 function press(action){if(off&&action!=='on')return;if(action!=='eng'&&action!=='shift')engActive=false;let shifted=shift, alphad=alpha;if(action!=='shift'&&action!=='alpha'){shift=false;alpha=false;mod.textContent=''}
- if(action==='on'){off=false;document.querySelector('.display').classList.remove('off');return}
+ if(action==='on'){off=false;document.querySelector('.display').classList.remove('off');try{const storageOk=resetAll();editor.clear();const restored=settings.reset();applySetup(restored.settings,restored.warning);shift=alpha=storing=recalling=false;mod.textContent='';status.textContent=restored.warning||(!storageOk?'NÃO FOI POSSÍVEL APAGAR DADOS SALVOS':'CALCULAR');undoState=pendingNative=null;engStep=0;engActive=dmsActive=mixedDisplay=showExact=false;lastExpressionView=null;refreshExpression()}catch{message('NÃO FOI POSSÍVEL REINICIAR DADOS')}return}
  if(action==='shift'){shift=!shift;alpha=false;mod.textContent=shift?'S':'';return}
  if(action==='alpha'){alpha=!alpha;shift=false;mod.textContent=alpha?'A':'';return}
  if(alphad&&action==='del'){if(undoState){const current=snapshot();restore(undoState);undoState=current}else message('NADA PARA DESFAZER');return}
@@ -107,9 +108,13 @@ function queueExpressionRefresh(){if(expressionRefreshQueued)return;expressionRe
 for(const event of ['input','keyup','click','select','focus','blur']) field.addEventListener(event,queueExpressionRefresh);
 app.addEventListener('click',queueExpressionRefresh);
 document.addEventListener('keydown',queueExpressionRefresh);
-refreshExpression();
+setResult('0');refreshExpression();
 
 let touchAnchor=null;
 naturalExpression.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();done=false;const p=naturalOffsetAt(naturalExpression,e.clientX,e.clientY);touchAnchor=p;field.focus({preventScroll:true});field.setSelectionRange(p,p);naturalExpression.setPointerCapture(e.pointerId);refreshExpression()});
 naturalExpression.addEventListener('pointermove',e=>{if(touchAnchor===null||!naturalExpression.hasPointerCapture(e.pointerId))return;const p=naturalOffsetAt(naturalExpression,e.clientX,e.clientY);field.setSelectionRange(Math.min(touchAnchor,p),Math.max(touchAnchor,p),p<touchAnchor?'backward':'forward');refreshExpression()});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])naturalExpression.addEventListener(type,()=>{touchAnchor=null});
+
+const controlTop=document.querySelector('.control-top'), directionPad=controlTop.querySelector('.direction');
+let directionFrame=0;function alignDirection(){cancelAnimationFrame(directionFrame);directionFrame=requestAnimationFrame(()=>{const upper=controlTop.querySelector('[data-action=shift]').getBoundingClientRect(),lower=keyboard.querySelector('[data-action=optn]').getBoundingClientRect(),control=controlTop.getBoundingClientRect(),pad=directionPad.getBoundingClientRect();const midpoint=(upper.top+upper.height/2+lower.top+lower.height/2)/2;directionPad.style.top=`${midpoint-control.top-pad.height/2}px`;});}
+const controlResize=new ResizeObserver(alignDirection);controlResize.observe(document.querySelector('.calculator'));window.addEventListener('resize',alignDirection);alignDirection();

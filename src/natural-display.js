@@ -1,9 +1,10 @@
+import {applyDigitGlyph} from './hp-digits.js';
 /** Render a mathematical expression while retaining source offsets for touch editing. */
 export function renderNatural(host, source, cursor = null, selectionEnd = cursor) {
   const text=String(source); host.replaceChildren(); const anchors=[];
   const start=cursor===null?-1:Math.min(cursor,selectionEnd??cursor), end=cursor===null?-1:Math.max(cursor,selectionEnd??cursor);
   function boundary(parent,index){const b=document.createElement('span');b.className='math-boundary';b.dataset.offset=index;b.setAttribute('aria-hidden','true');if(index===cursor&&start===end)b.classList.add('math-caret');parent.append(b);anchors.push(b)}
-  function char(parent,i){boundary(parent,i);const span=document.createElement('span');span.className='math-char';span.textContent=text[i];if(i>=start&&i<end)span.classList.add('math-selected');parent.append(span)}
+  function char(parent,i){boundary(parent,i);const span=document.createElement('span');span.className='math-char';applyDigitGlyph(span,text[i]);if(i>=start&&i<end)span.classList.add('math-selected');parent.append(span)}
   function hidden(parent,a,b){for(let i=a;i<b;i++)boundary(parent,i)}
   function matchClose(a,b){let depth=0;for(let i=a;i<b;i++){if(text[i]==='(')depth++;else if(text[i]===')'&&--depth===0)return i}return -1}
   function wrapped(a,b){return text[a]==='('&&matchClose(a,b)===b-1}
