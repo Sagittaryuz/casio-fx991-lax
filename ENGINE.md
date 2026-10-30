@@ -1,0 +1,15 @@
+# Motor científico: cobertura e limites
+
+`src/engine.js` avalia expressões reais sem executar código arbitrário. A API é `evaluate(expressão, {angle, ans, memory})` e `formatResult(número)`. `angle` é `DEG` (padrão) ou `RAD`. Erros de sintaxe e domínio são lançados como `Syntax ERROR` e `Math ERROR`.
+
+O motor reconhece aritmética com precedência, potência, parênteses, multiplicação implícita, porcentagem, fatorial inteiro, constantes π/e, Ans/M, trigonometria e inversas, funções hiperbólicas e inversas, raiz quadrada e cúbica, logaritmos decimal/natural e de base arbitrária, exponenciais, valor absoluto, arranjos e combinações. Use `logbase(base, valor)`, `npr(n,r)` e `ncr(n,r)` para as funções de dois argumentos. Cada função exige parênteses completos. Arranjos, combinações e fatorial exigem inteiros válidos e limitam n a 170; a precisão é a de ponto flutuante JavaScript.
+
+Os resultados são números reais em dupla precisão, apresentados com até dez algarismos significativos. A divisão representa frações numericamente; frações exatas, radicais simbólicos, números complexos, graus centesimais, derivadas, integrais, matrizes, vetores, estatística, tabelas, equações e Base-N não estão implementados no motor. Cobertura do motor não implica disponibilidade de cada função pela interface. Não se afirma compatibilidade integral com a calculadora física.
+
+`node --test tests/engine.test.mjs` testa precedência, ângulos, logaritmos, fatoriais, memória, erros, funções hiperbólicas e combinatórias. Inclui a conversão de 40 onças fluidas por 29,5735 do [guia oficial fx-991LA X, página 29](https://edu.casio.com/support/qsg_es/pdf/991LAX/ALL_CASIO_QuickStartGuide_fx-991LA_X_es.pdf). Os demais casos são testes numéricos independentes, não uma validação completa contra o aparelho ou manual.
+
+## Aritmética exata e edição
+
+`exactResult(expressão)` em `src/exact.js` apresenta racionais e somas de radicais quadráticos simplificados, inclusive produtos, potências inteiras e divisão por um único termo radical. Os exemplos `√24 = 2√6` e `√24 + √150 = 7√6` são do guia oficial, páginas 3–4. O avaliador numérico deve ser executado antes para verificar domínio. A função exata retorna `null` para expressões fora desse subconjunto, incluindo funções trigonométricas, π, raízes aninhadas não racionais, denominadores com soma de radicais, potências fracionárias e argumentos muito grandes; nesse caso, apresentar a aproximação numérica. Não se trata de álgebra simbólica completa nem da apresentação natural em duas dimensões do aparelho.
+
+`CalculatorEditor` em `src/editor.js` mantém texto, cursor, modificadores Shift/Alpha e variáveis A–F, x, y e M com restauração de snapshot. `evaluate` aceita essas variáveis via `options.variables` com maiúsculas/minúsculas distintas; a constante `e` permanece separada da variável `E`. Esses módulos precisam ser integrados ao teclado e ao armazenamento pela interface antes de serem apresentados como funções utilizáveis.
