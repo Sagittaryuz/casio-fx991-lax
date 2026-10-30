@@ -1,3 +1,5 @@
+import {logBase, nthRoot} from './scientific.js';
+
 /** Real-number expression evaluator; no dynamic code execution. */
 export function evaluate(expression, options = {}) {
   const source = String(expression).replace(/[π×÷−√]/g, c => ({'π':'pi','×':'*','÷':'/','−':'-','√':'sqrt'}[c]));
@@ -8,7 +10,7 @@ export function evaluate(expression, options = {}) {
     const n = rest.match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
     if (n) { tokens.push({type:'number', value:Number(n[0])}); i += n[0].length; continue; }
     const w = rest.match(/^[a-zA-Z]+/);
-    if (w) { tokens.push({type:'word', value:w[0]}); i += w[0].length; continue; }
+    if (w) { const word=w[0]; const named=/^(?:sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|asinh|acosh|atanh|sqrt|cbrt|log|ln|abs|exp|pow|logbase|nthroot|npr|ncr|pi|ans)$/i.test(word); if(!named && word.length>1 && /^[A-FxyMe]+$/.test(word)){for(const c of word) tokens.push({type:'word',value:c});}else tokens.push({type:'word',value:word}); i += word.length; continue; }
     if ('+-*/^()!%,'.includes(source[i])) { tokens.push({type:source[i++]}); continue; }
     throw Error('Syntax ERROR');
   }
@@ -16,8 +18,11 @@ export function evaluate(expression, options = {}) {
   const peek = () => tokens[pos];
   const take = type => { if (peek().type !== type) throw Error('Syntax ERROR'); return tokens[pos++]; };
   const checked = n => { if (!Number.isFinite(n)) throw Error('Math ERROR'); return Object.is(n,-0) ? 0 : n; };
-  const rad = n => options.angle === 'RAD' ? n : n * Math.PI / 180;
-  const angle = n => options.angle === 'RAD' ? n : n * 180 / Math.PI;
+  const unit = options.angle ?? 'DEG';
+  if (!['DEG','RAD','GRAD'].includes(unit)) throw Error('Syntax ERROR');
+  const factor = unit === 'RAD' ? 1 : Math.PI / (unit === 'GRAD' ? 200 : 180);
+  const rad = n => n * factor;
+  const angle = n => n / factor;
   const integerPair = (n, r) => {
     if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0 || r > n || n > 170) throw Error('Math ERROR');
   };
@@ -29,7 +34,7 @@ export function evaluate(expression, options = {}) {
     asinh:Math.asinh, acosh:Math.acosh, atanh:Math.atanh,
     sqrt:Math.sqrt, cbrt:Math.cbrt, log:Math.log10, ln:Math.log, abs:Math.abs,
     exp:Math.exp, pow10:n=>10**n,
-    logbase:(base,n)=>Math.log(n)/Math.log(base),
+    logbase:logBase, nthroot:nthRoot,
     npr:(n,r)=>{integerPair(n,r);let v=1;for(let i=0;i<r;i++)v*=n-i;return v;},
     ncr:(n,r)=>{integerPair(n,r);r=Math.min(r,n-r);let v=1;for(let i=1;i<=r;i++)v=v*(n-r+i)/i;return Math.round(v);}
   };
@@ -45,7 +50,7 @@ export function evaluate(expression, options = {}) {
       if (Object.hasOwn(variables,rawName)) value=variables[rawName];
       else if (Object.hasOwn(funcs,name)) {
         take('('); const args=[sum()]; while(peek().type===',') {take(',');args.push(sum());} take(')');
-        const arity = ['logbase','npr','ncr'].includes(name) ? 2 : 1;
+        const arity = ['logbase','nthroot','npr','ncr'].includes(name) ? 2 : 1;
         if(args.length!==arity) throw Error('Syntax ERROR');
         value=funcs[name](...args);
       }

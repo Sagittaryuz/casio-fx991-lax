@@ -19,7 +19,7 @@ const numeric = element => {
 
 /** Renderiza um modo. mode: 'matrix'/'matriz', 'vector'/'vetor' ou 'equation'/'equação'.
  * Retorna press(action), para encaminhar teclas da calculadora ao campo ativo, e destroy(). */
-export function mountLinear(container, mode) {
+export function mountLinear(container, mode, options = {}) {
   const names = {matriz:'matrix', vetor:'vector', 'equação':'equation', equacao:'equation'};
   mode = names[String(mode).toLowerCase()] || String(mode).toLowerCase();
   if (!['matrix','vector','equation'].includes(mode)) throw Error('Modo desconhecido');
@@ -27,11 +27,12 @@ export function mountLinear(container, mode) {
   const dimensionOptions = (min,max,selected) => Array.from({length:max-min+1},(_,i)=>min+i).map(n=>`<option value="${n}"${n===selected?' selected':''}>${n}</option>`).join('');
   const base = {
     matrix: `<label>Operação <select data-op>${option('add','A + B')}${option('subtract','A − B')}${option('multiply','A × B')}${option('det','Determinante de A')}${option('inverse','Inversa de A')}${option('transpose','Transposta de A')}</select></label><div class="lin-dimensions"><label>Linhas A <select data-dim="ar">${dimensionOptions(1,4,2)}</select></label><label>Colunas A <select data-dim="ac">${dimensionOptions(1,4,2)}</select></label><label data-b-dim>Linhas B <select data-dim="br">${dimensionOptions(1,4,2)}</select></label><label data-b-dim>Colunas B <select data-dim="bc">${dimensionOptions(1,4,2)}</select></label></div>`,
-    vector: `<label>Operação <select data-op>${option('add','A + B')}${option('subtract','A − B')}${option('dot','Produto escalar A · B')}${option('cross','Produto vetorial A × B')}${option('norm','Módulo de A')}${option('unit','Vetor unitário de A')}${option('angle','Ângulo entre A e B')}</select></label><label>Dimensões <select data-dim="n">${dimensionOptions(2,3,3)}</select></label><label data-angle>Unidade angular <select data-unit>${option('DEG','Graus')}${option('RAD','Radianos')}</select></label>`,
+    vector: `<label>Operação <select data-op>${option('add','A + B')}${option('subtract','A − B')}${option('dot','Produto escalar A · B')}${option('cross','Produto vetorial A × B')}${option('norm','Módulo de A')}${option('unit','Vetor unitário de A')}${option('angle','Ângulo entre A e B')}</select></label><label>Dimensões <select data-dim="n">${dimensionOptions(2,3,3)}</select></label><label data-angle>Unidade angular <select data-unit>${option('DEG','Graus')}${option('RAD','Radianos')}${option('GRAD','Grados')}</select></label>`,
     equation: `<label>Tipo <select data-op>${option('system','Sistema de equações')}${option('polynomial','Polinômio')}</select></label><label data-system-dim>Incógnitas <select data-dim="n">${dimensionOptions(2,4,2)}</select></label><label data-poly-dim>Grau <select data-dim="degree">${dimensionOptions(2,4,2)}</select></label>`
   };
   container.innerHTML = `<section class="linear-ui" aria-label="${mode==='matrix'?'Matriz':mode==='vector'?'Vetor':'Equação'}">${base[mode]}<div data-fields></div><button type="button" data-calculate>Calcular</button><div class="linear-result" data-output role="status" aria-live="polite"></div></section>`;
   const section=container.querySelector('.linear-ui'), fields=section.querySelector('[data-fields]'), op=section.querySelector('[data-op]'), output=section.querySelector('[data-output]');
+  if (mode === 'vector' && ['DEG','RAD','GRAD'].includes(options.angle)) section.querySelector('[data-unit]').value=options.angle;
   const dim=name=>Number(section.querySelector(`[data-dim="${name}"]`).value);
   const input=(name,label)=>`<input type="text" inputmode="decimal" data-cell="${name}" aria-label="${label}" value="0" autocomplete="off" spellcheck="false">`;
   const grid=(name,rows,cols,title)=>`<fieldset><legend>${title}</legend><div class="linear-grid" style="--columns:${cols}">${Array.from({length:rows},(_,r)=>Array.from({length:cols},(_,c)=>input(`${name}-${r}-${c}`,`${title}, linha ${r+1}, coluna ${c+1}`)).join('')).join('')}</div></fieldset>`;

@@ -1,6 +1,7 @@
 /** User-facing mode editors. All arithmetic delegates to the numerical modules. */
 import {complexOperation, complexPolar, complexFromPolar, baseConvert, baseOperation, baseNot, solveProportion, solveInequality} from './modes.js';
 import {derivative, integral, summation} from './calculus.js';
+import {polar, rectangular, fromDMS} from './scientific.js';
 import './ui-misc.css';
 
 const number = value => {
@@ -23,17 +24,20 @@ const interval = r => r.length ? r.map(x => {
 }).join(' ∪ ') : '∅';
 const input = (key,label,value='',extra={}) => ({key,label,value,...extra});
 const select = (key,label,value,choices) => ({key,label,value,choices});
-const angle = () => select('angle','Unidade angular','DEG',[['DEG','Graus'],['RAD','Radianos']]);
+const angle = () => select('angle','Unidade angular','DEG',[['DEG','Graus'],['RAD','Radianos'],['GRAD','Grados']]);
 const base = key => select(key,key==='from'?'Base de origem':key==='to'?'Base de destino':'Base',key==='to'?'16':'2', [['2','BIN'],['8','OCT'],['10','DEC'],['16','HEX']]);
 const modeDefs = {
   'Cálculo': {
-    'Derivada': {fields:[input('expr','f(x)','4*x^2-5*x'),input('x','Valor de x','0,2'),angle()], run:v=>fmt(derivative(expression(v.expr),number(v.x),{angle:v.angle}))},
-    'Integral definida': {fields:[input('expr','f(x)','1/x'),input('a','Limite inferior','2'),input('b','Limite superior','5'),angle()], run:v=>fmt(integral(expression(v.expr),number(v.a),number(v.b),{angle:v.angle}))},
-    'Somatório': {fields:[input('expr','Expressão em x','x^2+1'),input('a','De','-3'),input('b','Até','7'),angle()], run:v=>fmt(summation(expression(v.expr),number(v.a),number(v.b),{angle:v.angle}))}
+    'DMS → decimal': {fields:[select('sign','Sinal','+',[['+','+'],['-','−']]),input('degrees','Graus','12'),input('minutes','Minutos','30'),input('seconds','Segundos','0')],run:v=>fromDMS(number(v.degrees),number(v.minutes),number(v.seconds),v.sign==='-')},
+    'Pol': {fields:[input('x','x','3'),input('y','y','4'),angle()],run:v=>({kind:'polar',...polar(number(v.x),number(v.y),v.angle)})},
+    'Rec': {fields:[input('r','r','5'),input('theta','θ','53,13010235'),angle()],run:v=>({kind:'rectangular',...rectangular(number(v.r),number(v.theta),v.angle)})},
+    'Derivada': {fields:[input('expr','f(x)','4*x^2-5*x'),input('x','Valor de x','0,2'),angle()], run:v=>derivative(expression(v.expr),number(v.x),{angle:v.angle})},
+    'Integral definida': {fields:[input('expr','f(x)','1/x'),input('a','Limite inferior','2'),input('b','Limite superior','5'),angle()], run:v=>integral(expression(v.expr),number(v.a),number(v.b),{angle:v.angle})},
+    'Somatório': {fields:[input('expr','Expressão em x','x^2+1'),input('a','De','-3'),input('b','Até','7'),angle()], run:v=>summation(expression(v.expr),number(v.a),number(v.b),{angle:v.angle})}
   },
   'Complexos': {
     'Operações': {fields:[input('a','Primeiro número (a + bi)','2+3i'),select('op','Operação','+',[['+','+'],['-','−'],['*','×'],['/','÷']]),input('b','Segundo número (a + bi)','5-7i')],run:v=>complex(complexOperation(v.a.replaceAll(',','.'),v.op,v.b.replaceAll(',','.')))},
-    'Retangular → polar': {fields:[input('a','Número (a + bi)','3+4i'),angle()],run:v=>{const r=complexPolar(v.a.replaceAll(',','.'),v.angle);return `${fmt(r.radius)} ∠ ${fmt(r.angle)}${v.angle==='DEG'?'°':' rad'}`;}},
+    'Retangular → polar': {fields:[input('a','Número (a + bi)','3+4i'),angle()],run:v=>{const r=complexPolar(v.a.replaceAll(',','.'),v.angle);return `${fmt(r.radius)} ∠ ${fmt(r.angle)}${v.angle==='DEG'?'°':v.angle==='GRAD'?' gon':' rad'}`;}},
     'Polar → retangular': {fields:[input('r','Módulo r','5'),input('theta','Ângulo θ','53,13010235'),angle()],run:v=>complex(complexFromPolar(number(v.r),number(v.theta),v.angle))}
   },
   'Base-N': {
@@ -61,9 +65,9 @@ export function mountMisc(container, mode, options={}) {
   const fields=document.createElement('div'); fields.className='misc-fields'; wrapper.append(fields);
   const button=document.createElement('button');button.type='button';button.className='misc-calculate';button.textContent='Calcular';wrapper.append(button);
   const out=document.createElement('output');out.className='misc-output';out.setAttribute('aria-live','polite');out.dataset.miscResult='';wrapper.append(out);
-  container.append(wrapper);
+  const apply=document.createElement('button');apply.type='button';apply.textContent='Usar resultado';apply.hidden=true;apply.disabled=true;wrapper.append(apply);container.append(wrapper);let accepted=null,acceptedDetails=null;
   function render(){
-    fields.replaceChildren();out.textContent='';
+    fields.replaceChildren();out.textContent='';accepted=null;acceptedDetails=null;apply.hidden=true;apply.disabled=true;
     for(const item of modeDefs[mode][operation.value].fields){
       const label=document.createElement('label');label.className='misc-field';label.append(document.createTextNode(item.label));
       let control;
@@ -74,8 +78,9 @@ export function mountMisc(container, mode, options={}) {
       fields.append(label);
     }
   }
-  function run(){try{const values=Object.fromEntries([...fields.querySelectorAll('input,select')].map(e=>[e.name,e.value]));out.textContent=modeDefs[mode][operation.value].run(values);}catch(e){out.textContent=`Erro: ${e.message==='Math ERROR'?'verifique os valores e o domínio':e.message==='Syntax ERROR'?'expressão inválida':e.message}`;}}
+  function run(){try{const values=Object.fromEntries([...fields.querySelectorAll('input,select')].map(e=>[e.name,e.value]));const answer=modeDefs[mode][operation.value].run(values);if(answer?.kind==='polar'){out.textContent=`r = ${fmt(answer.radius)}, θ = ${fmt(answer.angle)}`;accepted=answer.radius;acceptedDetails={kind:'polar',variables:{x:answer.radius,y:answer.angle}}}else if(answer?.kind==='rectangular'){out.textContent=`x = ${fmt(answer.x)}, y = ${fmt(answer.y)}`;accepted=answer.x;acceptedDetails={kind:'rectangular',variables:{x:answer.x,y:answer.y}}}else{out.textContent=typeof answer==='number'?fmt(answer):answer;accepted=mode==='Cálculo'&&typeof answer==='number'&&Number.isFinite(answer)?answer:null;acceptedDetails={kind:'calculus'}};apply.hidden=accepted===null||!options.onAccept;apply.disabled=apply.hidden;}catch(e){accepted=null;apply.hidden=true;apply.disabled=true;out.textContent=`Erro: ${e.message==='Math ERROR'?'verifique os valores e o domínio':e.message==='Syntax ERROR'?'expressão inválida':e.message}`;}}
+  apply.addEventListener('click',()=>{if(accepted!==null)options.onAccept?.(accepted,acceptedDetails)});
   operation.addEventListener('change',render); button.addEventListener('click',run);
   wrapper.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();run();}});
-  render();return {element:wrapper,calculate:run};
+  render();return {element:wrapper,calculate:run,setOperation(name,expr){if(!Object.hasOwn(modeDefs[mode],name))return;operation.value=name;render();if(expr){const f=fields.querySelector('[name=expr]');if(f)f.value=expr}}};
 }

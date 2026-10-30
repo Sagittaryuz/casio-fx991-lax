@@ -3,8 +3,11 @@ import './natural-display.css';
 import { renderNatural, naturalOffsetAt, fractionTarget } from './natural-display.js';
 import { evaluate, formatResult } from './engine.js';
 import { exactResult } from './exact.js';
-import { openModes } from './modes-ui.js';
+import { openModes, openSetup, resetModes } from './modes-ui.js';
+import { createSettings, formatNumber } from './settings.js';
+import { SPREADSHEET_STORAGE_KEY } from './spreadsheet.js';
 import { CalculatorEditor } from './editor.js';
+import {toDMS, primeFactors, engineering, roundToDisplay} from './scientific.js';
 
 const app = document.querySelector('#app');
 const keys = [
@@ -20,43 +23,57 @@ const keys = [
 app.innerHTML = `<main class="stage"><section class="calculator" aria-label="Calculadora científica FX-991LA X"><div class="face"><header class="header"><div class="brand"><strong>CASIO</strong><span>fx-991LA X</span><em>CLASSWIZ</em></div><div class="solar" aria-label="Painel solar decorativo"></div></header><div class="display-bezel"><div class="display"><div class="status"><span id="mode">D</span><span id="modifier"></span><span id="status">CALCULAR</span></div><div class="expression-wrap"><div id="natural-expression" class="natural-expression" aria-hidden="true"></div><input id="expression" aria-label="Expressão" autocomplete="off" spellcheck="false" inputmode="none"></div><output id="result" aria-live="polite">0</output></div></div><div class="control-top"><div class="round-wrap"><span>SHIFT</span><button data-action="shift" class="round" aria-label="Shift"></button></div><div class="round-wrap alpha"><span>ALPHA</span><button data-action="alpha" class="round" aria-label="Alpha"></button></div><div class="direction" aria-label="Edição"><button data-action="left" aria-label="Cursor à esquerda">◀︎</button><div><button data-action="up" aria-label="Acima">▲</button><button data-action="down" aria-label="Abaixo">▼</button></div><button data-action="right" aria-label="Cursor à direita">▶︎</button></div><div class="round-wrap menu"><span>MENU SETUP</span><button data-action="menu" class="round" aria-label="Menu e configuração"></button></div><div class="round-wrap"><span>ON</span><button data-action="on" class="round" aria-label="Ligar"></button></div></div><div id="keyboard" class="keyboard"></div><div class="foot"></div></div></section><p class="caption">Projeto independente · Não é um aplicativo oficial da Casio</p></main>`;
 const keyboard=document.querySelector('#keyboard');
 const alphaKeys={negative:'A',dms:'B',inverse:'C',sin:'D',cos:'E',tan:'F',')':'x',toggleExact:'y',memory:'M',exp:'e'};
-keys.forEach((row,i)=>{const el=document.createElement('div');el.className='key-row row-'+i;row.forEach(k=>{const cell=document.createElement('div');cell.className='key-cell';const small=document.createElement('span');small.className='secondary';small.textContent=k.s||' '; if(alphaKeys[k.a]){const a=document.createElement('span');a.className='alpha-label';a.textContent=alphaKeys[k.a];small.append(' ',a)}const b=document.createElement('button');b.type='button';b.className='key '+(i>=4?'number ':'science ')+(k.c||'');b.textContent=k.t;b.dataset.action=k.a;b.setAttribute('aria-label',k.t+(k.s?' · Shift '+k.s:'')+(alphaKeys[k.a]?' · Alpha '+alphaKeys[k.a]:''));cell.append(small,b);el.append(cell)});keyboard.append(el)});
+keys.forEach((row,i)=>{const el=document.createElement('div');el.className='key-row row-'+i;row.forEach(k=>{const cell=document.createElement('div');cell.className='key-cell';const small=document.createElement('span');small.className='secondary';small.textContent=k.s||' '; if(alphaKeys[k.a]||k.a==='calc'){const a=document.createElement('span');a.className='alpha-label';a.textContent=alphaKeys[k.a]||'=';small.append(' ',a)}const b=document.createElement('button');b.type='button';b.className='key '+(i>=4?'number ':'science ')+(k.c||'');b.textContent=k.t;b.dataset.action=k.a;b.setAttribute('aria-label',k.t+(k.s?' · Shift '+k.s:'')+(alphaKeys[k.a]?' · Alpha '+alphaKeys[k.a]:''));cell.append(small,b);el.append(cell)});keyboard.append(el)});
 const field=document.querySelector('#expression'), result=document.querySelector('#result'), mod=document.querySelector('#modifier'), mode=document.querySelector('#mode'), status=document.querySelector('#status');
-let shift=false, alpha=false, storing=false, recalling=false, angle='DEG', ans=0, off=false, done=false, exact=null, decimal='0', showExact=false;
+let shift=false, alpha=false, storing=false, recalling=false, angle='DEG', ans=0, off=false, done=false, exact=null, decimal='0', showExact=false, engStep=0, engActive=false, dmsActive=false;
 const editor=new CalculatorEditor();
+const settings=createSettings();
+angle=settings.get().angle;mode.textContent=angle==='DEG'?'D':angle==='RAD'?'R':'G';
+function applySetup(value,warning){angle=value.angle;mode.textContent=angle==='DEG'?'D':angle==='RAD'?'R':'G';if(done){decimal=formatNumber(ans,value).replace('.',',');if(!showExact)setResult(decimal)}if(warning)message(warning)}
+function acceptResult(value,details={}){if(details.variables){for(const [name,v] of Object.entries(details.variables))if(Object.hasOwn(editor.variables,name)&&Number.isFinite(v))editor.store(name,v);if(details.kind==='solve'&&Object.hasOwn(editor.variables,details.variable))editor.store(details.variable,value)}ans=value;decimal=formatNumber(ans,settings.get()).replace('.',',');exact=null;showExact=false;done=true;setResult(decimal)}
+function calcContext(){return {angle,expression:field.value.replaceAll(',','.').replaceAll(';',','),variables:{...editor.variables},ans,onAccept:acceptResult}}
+function resetAll(){localStorage.removeItem(SPREADSHEET_STORAGE_KEY);resetModes();for(const name of Object.keys(editor.variables))editor.store(name,0);ans=0;field.value='';setResult('0');done=false;exact=null;decimal='0'}
 const naturalExpression=document.querySelector('#natural-expression');
 function refreshExpression(){renderNatural(naturalExpression,field.value,document.activeElement===field?field.selectionStart:null,field.selectionEnd);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
 function setResult(value){value=String(value);result.setAttribute('aria-label',value);if(value.includes('/'))renderNatural(result,value);else result.textContent=value;}
 function insert(str){if(done){field.value=/^[+*/^\-]$/.test(str)?'Ans':'';field.setSelectionRange(field.value.length,field.value.length);done=false} const start=field.selectionStart??field.value.length, end=field.selectionEnd??start;field.value=field.value.slice(0,start)+str+field.value.slice(end);field.focus();field.setSelectionRange(start+str.length,start+str.length)}
 function message(s){status.textContent=s;setTimeout(()=>status.textContent='CALCULAR',2500)}
-function press(action){if(off&&action!=='on')return;let shifted=shift, alphad=alpha;if(action!=='shift'&&action!=='alpha'){shift=false;alpha=false;mod.textContent=''}
+function press(action){if(off&&action!=='on')return;if(action!=='eng'&&action!=='shift')engActive=false;let shifted=shift, alphad=alpha;if(action!=='shift'&&action!=='alpha'){shift=false;alpha=false;mod.textContent=''}
  if(action==='on'){off=false;document.querySelector('.display').classList.remove('off');return}
  if(action==='shift'){shift=!shift;alpha=false;mod.textContent=shift?'S':'';return}
  if(action==='alpha'){alpha=!alpha;shift=false;mod.textContent=alpha?'A':'';return}
+ if(alphad&&(action==='calc'||action==='equals')){insert('=');return}
  if((alphad||storing||recalling)&&alphaKeys[action]){const name=alphaKeys[action];if(storing||recalling){if(name==='e'){storing=false;recalling=false;message('VARIÁVEL INVÁLIDA')}else if(storing){editor.store(name,ans);storing=false;message('STO '+name)}else {insert(String(editor.recall(name)).replace('.',','));recalling=false}}else insert(name);return}
  if(action==='store'){storing=!shifted;recalling=shifted;message(shifted?'RECALL: ESCOLHA VARIÁVEL':'STO: ESCOLHA VARIÁVEL');return}
  if(action==='memory'){editor.store('M',editor.recall('M')+(shifted?-ans:ans));message('M = '+formatResult(editor.recall('M')));return}
- if(action==='dms'||action==='optn'||action==='calc'||action==='integral'||action==='eng'){message('NÃO DISPONÍVEL');return}
- if(action==='variableX'){if(shifted){message('NÃO DISPONÍVEL')}else insert('x');return}
- if(action==='menu'){if(shifted){angle=angle==='DEG'?'RAD':'DEG';mode.textContent=angle==='DEG'?'D':'R';message(angle)}else openModes({angle});return}
+ if(action==='dms'){if(!shifted&&!field.value.trim()&&!done){openModes({initialMode:'Cálculo',initialOperation:'DMS → decimal',angle,onAccept:acceptResult});return}try{if(!shifted&&dmsActive){setResult(formatNumber(ans,settings.get()).replace('.',','));dmsActive=false;return}if(!done){const expr=field.value.replaceAll(',','.');ans=evaluate(expr,{angle,ans,variables:editor.variables});done=true}if(shifted){const factors=primeFactors(ans);setResult(factors.map(f=>String(f.prime)+(f.exponent>1?'^'+f.exponent:'')).join(' × '))}else{const d=toDMS(ans);setResult((d.negative?'−':'')+d.degrees+'° '+d.minutes+'′ '+Number(d.seconds.toPrecision(8))+'″');dmsActive=true} }catch(e){setResult('Erro');message('MATH ERROR')}return}
+ if(action==='eng'){try{if(!done){ans=evaluate(field.value.replaceAll(',','.'),{angle,ans,variables:editor.variables});done=true}if(!engActive){engStep=0;engActive=true}else engStep+=shifted?-1:1;const v=engineering(ans,engStep);setResult(String(Number(v.mantissa.toPrecision(10))).replace('.',',')+'×10^'+v.exponent)}catch(e){setResult('Erro');message('MATH ERROR')}return}
+ if(action==='optn'){message(shifted?'QR INDISPONÍVEL':'NÃO DISPONÍVEL');return}
+ if(action==='calc'){openModes({initialMode:shifted?'solve':'calc',expression:field.value.replaceAll(',','.').replaceAll(';',','),variables:{...editor.variables},ans,angle,onAccept:acceptResult});return}
+ if(action==='integral'){openModes({initialMode:'Cálculo',initialOperation:shifted?'Derivada':'Integral definida',expression:field.value.replaceAll(',','.'),angle,onAccept:acceptResult});return}
+ if(action==='variableX'){if(shifted)openModes({initialMode:'Cálculo',initialOperation:'Somatório',expression:field.value.replaceAll(',','.'),angle,onAccept:acceptResult});else insert('x');return}
+ if(shifted&&(action==='+'||action==='-')){openModes({initialMode:'Cálculo',initialOperation:action==='+'?'Pol':'Rec',angle});return}
+ if(action==='menu'){if(shifted)openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll});else openModes(calcContext());return}
+ if(action==='9'&&shifted){openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll});return}
  if(action==='clear'){storing=false;recalling=false;if(shifted){off=true;document.querySelector('.display').classList.add('off')}else{field.value='';setResult('0');done=false}return}
  if(action==='del'){if(shifted){message('INSERÇÃO ATIVA');return}let start=field.selectionStart??field.value.length,end=field.selectionEnd??start;if(start===end&&start>0)start--;field.value=field.value.slice(0,start)+field.value.slice(end);field.focus();field.setSelectionRange(start,start);return}
  if(action==='up'||action==='down'){const p=field.selectionStart??0;const target=fractionTarget(field.value,p,action);if(target!==null){field.focus();field.setSelectionRange(target,target)}return}
  if(action==='left'||action==='right'){const p=field.selectionStart??0;field.focus();field.setSelectionRange(Math.max(0,Math.min(field.value.length,p+(action==='left'?-1:1))),Math.max(0,Math.min(field.value.length,p+(action==='left'?-1:1))));return}
  if(action==='unsupported'){message('NÃO DISPONÍVEL');return}
  if(action==='toggleExact'){if(shifted){message('NÃO DISPONÍVEL');return}if(exact!==null){showExact=!showExact;setResult(showExact?exact:decimal)}return}
- if(action==='equals'){if(shifted&&done){setResult(decimal);showExact=false;return}try{let expr=field.value.replaceAll(',','.').replaceAll(';',',');const balance=(expr.match(/\(/g)||[]).length-(expr.match(/\)/g)||[]).length;if(balance>0)expr+=')'.repeat(balance);const val=evaluate(expr,{angle,ans,variables:editor.variables,memory:editor.recall('M')});decimal=formatResult(val).replace('.',',');exact=exactResult(expr);showExact=exact!==null;setResult(showExact?exact:decimal);ans=val;done=true}catch(e){setResult('Erro');message('VERIFIQUE A EXPRESSÃO')}return}
+ if(action==='equals'){dmsActive=false;if(shifted&&done){setResult(decimal);showExact=false;return}try{let expr=field.value.replaceAll(',','.').replaceAll(';',',');const balance=(expr.match(/\(/g)||[]).length-(expr.match(/\)/g)||[]).length;if(balance>0)expr+=')'.repeat(balance);const val=evaluate(expr,{angle,ans,variables:editor.variables,memory:editor.recall('M')});decimal=formatNumber(val,settings.get()).replace('.',',');exact=exactResult(expr);showExact=exact!==null;setResult(showExact?exact:decimal);ans=val;done=true}catch(e){setResult('Erro');message('VERIFIQUE A EXPRESSÃO')}return}
  if(['sin','cos','tan'].includes(action)){insert((shifted?'a':'')+action+'(');return}
  if(action==='sqrt'){insert(shifted?'cbrt(':'sqrt(');return}
  if(action==='log'||action==='ln'){insert(shifted?(action==='log'?'10^':'e^'):action+'(');return}
  if(action==='square'){insert(shifted?'^3':'^2');return}
- if(action==='power'){if(shifted)message('NÃO DISPONÍVEL');else insert('^');return} if(action==='inverse'){insert(shifted?'!':'^(-1)');return}
- if(action==='negative'){if(shifted)message('NÃO DISPONÍVEL');else insert('-');return} if(action==='fraction'){if(shifted){message('NÃO DISPONÍVEL');return}insert('()/()');const p=field.selectionStart;field.setSelectionRange(p-4,p-4);return}
+ if(action==='power'){if(shifted){insert('nthroot(; )');const p=field.selectionStart;field.setSelectionRange(p-3,p-3)}else insert('^');return} if(action==='inverse'){insert(shifted?'!':'^(-1)');return}
+ if(action==='negative'){if(shifted){insert('logbase(; )');const p=field.selectionStart;field.setSelectionRange(p-3,p-3)}else insert('-');return} if(action==='fraction'){if(shifted){message('NÃO DISPONÍVEL');return}insert('()/()');const p=field.selectionStart;field.setSelectionRange(p-4,p-4);return}
  if(action==='exp'){insert(shifted?'pi':'*10^');return} if(action==='ans'){insert(shifted?'%':'Ans');return}
  if(action==='('&&shifted){insert('abs(');return}
  if((action==='*'||action==='/')&&shifted){const previous=done?'Ans':field.value;if(!previous){message('INFORME O PRIMEIRO VALOR');return}field.value=(action==='*'?'npr(':'ncr(')+previous+';';done=false;field.focus();field.setSelectionRange(field.value.length,field.value.length);return}
  if(action===','&&shifted){insert(String(Math.random()).replace('.',','));return}
- if(shifted&&['7','8','9','del','0','+','-','equals'].includes(action)){message('NÃO DISPONÍVEL');return}
+ if(action==='0'&&shifted){try{const cfg=settings.get();ans=roundToDisplay(ans,cfg.format,cfg.format==='NORM'?10:cfg.format==='SCI'?(cfg.digits||10):cfg.digits);decimal=formatNumber(ans,cfg).replace('.',',');exact=null;showExact=false;setResult(decimal);done=true}catch(e){setResult('Erro')}return}
+ if(shifted&&['7','8','9','del','+','-','equals'].includes(action)){message('NÃO DISPONÍVEL');return}
  insert(action);
 }
 app.addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(b)press(b.dataset.action)});

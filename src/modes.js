@@ -34,12 +34,12 @@ export function complexOperation(a, op, b) {
 }
 export function complexPolar(a, angle='DEG') {
   const c=asComplex(a); let theta=Math.atan2(c.im,c.re);
-  if(angle==='DEG') theta*=180/Math.PI; else if(angle!=='RAD') throw Error('Syntax ERROR');
+  if(angle==='DEG') theta*=180/Math.PI; else if(angle==='GRAD') theta*=200/Math.PI; else if(angle!=='RAD') throw Error('Syntax ERROR');
   return {radius:finite(Math.hypot(c.re,c.im)), angle:finite(theta)};
 }
 export function complexFromPolar(radius, theta, angle='DEG') {
   radius=Number(radius); theta=Number(theta); if(radius<0 || !Number.isFinite(radius) || !Number.isFinite(theta)) fail();
-  if(angle==='DEG') theta*=Math.PI/180; else if(angle!=='RAD') throw Error('Syntax ERROR');
+  if(angle==='DEG') theta*=Math.PI/180; else if(angle==='GRAD') theta*=Math.PI/200; else if(angle!=='RAD') throw Error('Syntax ERROR');
   return z(radius*Math.cos(theta),radius*Math.sin(theta));
 }
 

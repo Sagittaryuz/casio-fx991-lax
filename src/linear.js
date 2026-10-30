@@ -41,7 +41,7 @@ export function vectorDot(a,b){pair(a,b);return a.reduce((sum,x,i)=>sum+x*b[i],0
 export function vectorCross(a,b){pair(a,b);if(a.length!==3)fail('Dimension ERROR');return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
 export function vectorNorm(a){vec(a);return Math.hypot(...a);}
 export function vectorUnit(a){const n=vectorNorm(a);if(n===0)fail();return a.map(v=>v/n);}
-export function vectorAngle(a,b,angle='DEG'){pair(a,b);const n=vectorNorm(a)*vectorNorm(b);if(n===0)fail();const value=Math.acos(Math.max(-1,Math.min(1,vectorDot(a,b)/n)));if(!['DEG','RAD'].includes(angle))fail();return angle==='DEG'?value*180/Math.PI:value;}
+export function vectorAngle(a,b,angle='DEG'){pair(a,b);const n=vectorNorm(a)*vectorNorm(b);if(n===0)fail();const value=Math.acos(Math.max(-1,Math.min(1,vectorDot(a,b)/n)));if(!['DEG','RAD','GRAD'].includes(angle))fail();return angle==='RAD'?value:value*(angle==='GRAD'?200:180)/Math.PI;}
 
 // Roots are complex {re, im}; quadratic uses a stable formula. Cubic/quartic
 // use Durand–Kerner with a convergence/residual check, so failure is explicit.

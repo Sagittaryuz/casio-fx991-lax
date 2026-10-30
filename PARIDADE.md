@@ -1,6 +1,6 @@
 # Matriz de paridade — fx-991LA X
 
-Esta matriz é um inventário **verificável, não uma certificação de equivalência**. Referência: [guia oficial Casio fx-991LA X](https://edu.casio.com/support/qsg_es/pdf/991LAX/ALL_CASIO_QuickStartGuide_fx-991LA_X_es.pdf), capa e páginas 2–48. As fotos fornecidas são da fx-991EX; a capa do guia identifica a LA X e usa vírgula decimal. Este levantamento descreve o código local em evolução após o checkpoint `e900144`, incluindo o painel restrito ao visor, navegação pelas teclas físicas, a apresentação matemática parcial e a persistência da planilha. A publicação, os testes e os commits correspondentes devem ser conferidos no relatório da versão; não se assume que código em andamento esteja publicado.
+Esta matriz é um inventário **verificável, não uma certificação de equivalência**. Referência: [guia oficial Casio fx-991LA X](https://edu.casio.com/support/qsg_es/pdf/991LAX/ALL_CASIO_QuickStartGuide_fx-991LA_X_es.pdf), capa e páginas 2–48. As fotos fornecidas são da fx-991EX; a capa do guia identifica a LA X e usa vírgula decimal. Este levantamento descreve o código local em evolução, incluindo o painel restrito ao visor, as novas funções científicas e a persistência da planilha e das configurações. A publicação, os testes e os commits correspondentes devem ser conferidos no relatório da versão; não se assume que código em andamento esteja publicado.
 
 **Legenda:** `P` = parcialmente implementado: existe comportamento útil, mas não comprovado ou sem a interface/comportamento completo do aparelho; `A` = ausente ou explicitamente “NÃO DISPONÍVEL”; `—` = nenhuma função Alpha ou Shift identificada/implementada para esta tecla no código. Mesmo `P` não implica validação no aparelho físico. A coluna Alpha indica o que o aplicativo implementa, não é garantia de que toda a serigrafia regional da LA X foi identificada. As fontes de verdade de comportamento são `src/main.js` (`keys`, `alphaKeys`, `press`) e `src/modes-ui.js`, não os rótulos impressos.
 
@@ -14,7 +14,7 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 | ▶ | P — move cursor no campo de expressão. | — | — |
 | ▲ | P — move para numerador de fração `(...) / (...)`, inclusive grupos aninhados reconhecidos; fora desse padrão, não faz nada. Sem histórico de cálculos. | — | — |
 | ▼ | P — move para denominador de fração `(...) / (...)`, inclusive grupos aninhados reconhecidos; fora desse padrão, não faz nada. Sem histórico de cálculos. | — | — |
-| MENU | P — abre painel restrito ao visor, mantendo as teclas acessíveis; modos são selecionados em lista e usam formulários, não menu de ícones nem navegação idêntica à do aparelho. | P — alterna DEG/RAD, não apresenta todas as opções SETUP; falta GRAD, formatos e demais ajustes. | — |
+| MENU | P — abre painel restrito ao visor, mantendo as teclas acessíveis; modos são selecionados em lista e usam formulários, não menu de ícones nem navegação idêntica à do aparelho. | P — SETUP com DEG/RAD/GRAD e FIX/SCI/NORM persistentes; não cobre todos os ajustes físicos. | — |
 | ON | P — reexibe visor desligado; não reproduz ciclo de energia físico. | — | — |
 
 ## Teclas científicas
@@ -22,23 +22,23 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 | Tecla no corpo | Principal no app | Shift no app | Alpha no app / lacuna |
 |---|---|---|---|
 | OPTN | A — informa indisponível; falta menu contextual de opções. | A — QR indisponível. | — |
-| CALC | A — falta substituição interativa de variáveis CALC. | A — SOLVE/Newton por variável não está disponível. Sistemas/polinômios no menu não substituem SOLVE. | — |
-| ∫ | A — tecla do corpo não abre nem insere integral. | A — derivada no corpo indisponível. O menu Cálculo oferece integral e derivada numéricas por formulário. | — |
-| x | P — insere `x`. | A — Σ no corpo indisponível; somatório numérico no menu Cálculo. | — |
+| CALC | P — CALC pede valores para variáveis em formulário, calcula e permite aplicar ou cancelar. | P — SOLVE usa estimativa inicial e exibe raiz e resíduo; Newton numérico pode não convergir ou detectar descontinuidades. | — |
+| ∫ | P — abre formulário de integral definida numérica no visor. | P — abre formulário de derivada numérica no visor; aproximações podem falhar em descontinuidades. | — |
+| x | P — insere `x`. | P — abre formulário de somatório numérico no visor. | — |
 | Fração | P — insere `()/()` com cursor inicial no numerador, apresenta fração empilhada e permite deslocar entre campos reconhecidos, inclusive aninhados, com ▲/▼; `exactResult` resolve subconjunto racional. Toque escolhe a fronteira visual mais próxima e arrasto seleciona; falta editor estrutural completo e validação em aparelho físico. | A — número misto não implementado. | — |
 | √ | P — insere `sqrt(` e apresenta radical para entradas reconhecidas, inclusive parêntese aberto; alguns radicais quadráticos são exatos. | P — insere `cbrt(`; precisão/apresentação não equivalentes comprovadas. | — |
 | x² | P — insere `^2`. | P — insere `^3`. | — |
-| xʸ | P — insere `^`; apresentação visual em sobrescrito quando há operandos reconhecidos. Não há editor estrutural geral de expoente. | A — raiz de índice arbitrário no teclado. | — |
+| xʸ | P — insere `^`; apresentação visual em sobrescrito quando há operandos reconhecidos. Não há editor estrutural geral de expoente. | P — insere template `nthroot(índice;valor)`; domínio real verificado. | — |
 | log | P — `log(`, base 10. | P — `10^`. | — |
 | ln | P — `ln(`. | P — `e^`. | — |
-| (−) | P — insere sinal `-`; não distingue uma tecla negativa física nem todas as precedências físicas. | A — logaritmo de base arbitrária pela tecla. Motor possui `logbase(base,valor)` mas não há template nesta tecla. | P — `A`, variável em sessão. |
-| ° ′ ″ | A — conversão sexagesimal não implementada. | A — FACT indisponível nesta tecla; decomposição em fatores não implementada. | P — `B`, variável em sessão. |
+| (−) | P — insere sinal `-`; não distingue uma tecla negativa física nem todas as precedências físicas. | P — insere template `logbase(base;valor)`; exige base positiva diferente de 1 e valor positivo. | P — `A`, variável em sessão. |
+| ° ′ ″ | P — converte decimal para graus/minutos/segundos e de volta; entrada por componentes quando vazia. | P — fatoração prima de inteiros de 2 a 9.999.999.999. | P — `B`, variável em sessão. |
 | x⁻¹ | P — insere `^(-1)`. | P — insere fatorial `!`; inteiro não negativo até 170 no motor. | P — `C`, variável em sessão. |
-| sin | P — seno DEG/RAD. | P — inversa `asin` DEG/RAD; entrada linear. | P — `D`, variável em sessão. |
-| cos | P — cosseno DEG/RAD. | P — inversa `acos` DEG/RAD; entrada linear. | P — `E`, variável em sessão. |
-| tan | P — tangente DEG/RAD, rejeita proximidade de singularidade. | P — inversa `atan` DEG/RAD; entrada linear. | P — `F`, variável em sessão. |
+| sin | P — seno DEG/RAD/GRAD. | P — inversa `asin` DEG/RAD/GRAD; entrada linear. | P — `D`, variável em sessão. |
+| cos | P — cosseno DEG/RAD/GRAD. | P — inversa `acos` DEG/RAD/GRAD; entrada linear. | P — `E`, variável em sessão. |
+| tan | P — tangente DEG/RAD/GRAD, rejeita proximidade de singularidade. | P — inversa `atan` DEG/RAD/GRAD; entrada linear. | P — `F`, variável em sessão. |
 | STO | P — armazena `Ans` na variável selecionada; não reproduz todos os fluxos do aparelho. | P — RECALL insere valor de variável; em sessão. | — |
-| ENG | A — notação de engenharia/avanço de expoente indisponível. | A — deslocamento reverso de engenharia indisponível. | — |
+| ENG | P — mostra notação de engenharia e avança o expoente em múltiplos de 3. | P — desloca expoente na direção inversa. | — |
 | ( | P — abre parêntese; fecha automaticamente parênteses pendentes no cálculo. | P — insere `abs(`. | — |
 | ) | P — fecha parêntese. | — | P — `x`, variável em sessão. |
 | S⇔D | P — alterna exato/decimal somente se `exactResult` suportar expressão. | A — conversão mista/imprópria indisponível. | P — `y`, variável em sessão. |
@@ -50,7 +50,7 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 |---|---|---|---|
 | 7 | P — dígito. | A — CONST: catálogo de constantes físicas não disponível. | — |
 | 8 | P — dígito. | A — CONV: catálogo de conversões de unidade não disponível. | — |
-| 9 | P — dígito. | A — RESET: menu de reinicialização não disponível. | — |
+| 9 | P — dígito. | P — abre RESET/SETUP; apagar todos os dados exige confirmação explícita. | — |
 | DEL | P — apaga seleção ou caractere anterior. | P — mostra “INSERÇÃO ATIVA”; a edição sempre insere, sem alternância de modo comprovada. UNDO não existe. | — |
 | AC | P — limpa entrada e resultado. | P — OFF oculta o visor até ON; não é desligamento físico. | — |
 | 4 | P — dígito. | — | — |
@@ -61,9 +61,9 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 | 1 | P — dígito. | — | — |
 | 2 | P — dígito. | — | — |
 | 3 | P — dígito. | — | — |
-| + | P — adição. | A — Pol( conversão pela tecla não disponível; formulário Complexos oferece retangular→polar. | — |
-| − | P — subtração. | A — Rec( conversão pela tecla não disponível; formulário Complexos oferece polar→retangular. | — |
-| 0 | P — dígito. | A — Rnd indisponível. | — |
+| + | P — adição. | P — abre formulário Pol retangular→polar; apresenta dois resultados. | — |
+| − | P — subtração. | P — abre formulário Rec polar→retangular; apresenta dois resultados. | — |
+| 0 | P — dígito. | P — arredonda o resultado ao formato atual; representação binária pode diferir do aparelho. | — |
 | , | P — separador decimal na entrada. | P — Ran# insere valor de `Math.random`; distribuição e apresentação física não verificadas. | — |
 | ×10ˣ | P — insere `*10^`; a apresentação natural mostra expoente quando encontra operandos reconhecidos, mas não há editor estrutural geral. | P — insere π; saídas exatas envolvendo π não são completas. | P — insere constante `e`, não registrador gravável. |
 | Ans | P — insere resultado numérico anterior. | P — `%` (divisão por 100 no motor); sem confirmação de todos os contextos do aparelho. | — |
@@ -77,7 +77,7 @@ O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navega�
 
 | Modo | O que está acessível no aplicativo | Lacunas específicas / verificação |
 |---|---|---|
-| Calcular | Aritmética, parênteses, trigonometria DEG/RAD, logs naturais/decimais, valor absoluto, fatorial, combinatória, subconjunto de frações/radicais; formulário numérico para derivada, integral e soma. | Sem GRAD, SOLVE/CALC, catálogos CONST/CONV, editor estrutural natural completo, número misto e simplificação simbólica geral; a apresentação parcial empilha frações aninhadas reconhecidas e mostra raízes e potências com operandos reconhecidos; derivada/integral não garantem detectar singularidades ou descontinuidades. `tests/engine.test.mjs`, `tests/exact.test.mjs`, `tests/calculus.test.mjs`; exemplos guia pp. 3–5 e 29. |
+| Calcular | Aritmética, parênteses, trigonometria DEG/RAD/GRAD, logs naturais/decimais, valor absoluto, fatorial, combinatória, subconjunto de frações/radicais; formulário numérico para derivada, integral e soma. | Sem catálogos CONST/CONV, editor estrutural natural completo, número misto e simplificação simbólica geral; CALC/SOLVE e DEG/RAD/GRAD estão disponíveis por formulários, com limitações numéricas; a apresentação parcial empilha frações aninhadas reconhecidas e mostra raízes e potências com operandos reconhecidos; derivada/integral não garantem detectar singularidades ou descontinuidades. `tests/engine.test.mjs`, `tests/exact.test.mjs`, `tests/calculus.test.mjs`; exemplos guia pp. 3–5 e 29. |
 | Complexos | Soma, subtração, produto, quociente e conversão retangular/polar por campos. | Não há editor complexo integrado ao visor principal nem cobertura completa de funções complexas; operações numéricas. `tests/modes.test.mjs`, guia pp. 11–12. |
 | Base-N | Binário, octal, decimal, hexadecimal; conversão, +/−/×/÷, AND/OR/XOR/XNOR/NOT por campos. | Adota inteiros de 32 bits e complemento de dois; limites e formatação da LA X não foram verificados; sem sequência fiel de teclas. `tests/modes.test.mjs`. |
 | Matriz | A+B, A−B, A×B, determinante, inversa e transposta em matrizes até 4×4 por grade. | Identidade e escala existem no módulo `linear.js`, mas não têm opção no formulário; sem registradores MatA/MatB/MatC/MatD do fluxo físico ou entrada natural. `tests/linear.test.mjs`, guia pp. 13–16. |
@@ -86,13 +86,13 @@ O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navega�
 | Distribuição | Normal densidade, acumulada, intervalo e inversa; binomial e Poisson densidade/acumulada. | Aproximações e caudas têm limites; não foi demonstrada equivalência dos intervalos/limites ou interface do aparelho. `STATISTICS.md`, `tests/statistics.test.mjs`, guia pp. 24–27. |
 | Planilha | Grade A–E, linhas 1–45, fórmulas básicas, SUM/MEAN, cópia/movimentação/preenchimento e referências relativas/absolutas. | Snapshots são salvos no armazenamento local ao editar e após copiar/mover/preencher; falha de armazenamento é sinalizada, e dados ilegíveis são preservados até o usuário iniciar nova planilha. Esse armazenamento pode ser limpo pelo navegador. Mover não reescreve referências externas; texto e várias funções não são suportados. `SPREADSHEET.md`, `tests/spreadsheet.test.mjs` incluem restauração, dados corrompidos e falha de armazenamento; guia pp. 29–33. |
 | Tabela | Uma ou duas expressões, início/fim/passo; até 1000 linhas no módulo. | Limites de linhas e edição não foram comparados com o aparelho; domínio inválido vira célula de erro. `tests/modes.test.mjs`, guia p. 36. |
-| Equação/Função | Sistemas 2–4 incógnitas e polinômios grau 2–4, com raízes complexas numéricas. | Sistemas singulares são rejeitados; polinômios mal condicionados podem não convergir; sem SOLVE geral ou editor físico. `tests/linear.test.mjs`, guia seção Equação. |
+| Equação/Função | Sistemas 2–4 incógnitas e polinômios grau 2–4, com raízes complexas numéricas. | Sistemas singulares são rejeitados; polinômios mal condicionados podem não convergir; SOLVE numérico está disponível pela tecla CALC; não há editor físico idêntico. `tests/linear.test.mjs`, guia seção Equação. |
 | Desigualdade | Polinômios reais até grau 4 e relações <, ≤, >, ≥, em intervalos numéricos. | Sem solução simbólica; raízes próximas/grandes e coeficientes mal condicionados podem ser inexatos; sequência física não reproduzida. `tests/modes.test.mjs`, guia p. 45. |
 | Proporção | A:B=C:X e A:B=X:D por campos. | Não demonstrada equivalência de tratamento de entradas excepcionais e sequência de teclas. `tests/modes.test.mjs`, guia seção Proporção. |
 
 ## Evidência e limites de teste
 
-- `npm test` executa os testes Node em `tests/*.test.mjs`; os casos específicos são identificados nas tabelas e documentos citados. Testes numéricos de módulo **não** provam que cada tecla ou cada fluxo tenha sido testado no navegador.
+- `npm test` executa os testes Node em `tests/*.test.mjs`, incluindo `solve.test.mjs`, `scientific.test.mjs`, `settings.test.mjs` e `grad.test.mjs`; os casos específicos são identificados nas tabelas e documentos citados. Testes numéricos de módulo **não** provam que cada tecla ou cada fluxo tenha sido testado no navegador.
 - Os ensaios locais cobriram exemplos de matriz/vetor/sistema/polinômio, complexo e Base-N, estatística, tabela/planilha, persistência com falhas simuladas, e atalhos do corpo. No visor natural foram testados `7/8`, alternância decimal, mudança de numerador 7→5, `√24`, `2^3`, `(1+2/3)/4=5/12` e `√(9/4)^2=9/4`; em Chromium móvel emulado, um toque alterou o denominador e arrasto de mouse selecionou caracteres (`qa/natural-nested-browser.mjs`); não constituem uma varredura de todas as combinações Shift/Alpha. A leitura acima usa ramificações reais do código, e ausências não devem ser tratadas como testes passados.
 - Não há comparação com firmware, dispositivo físico nem suíte oficial de 552 funções. Não foi verificada fidelidade de fontes, exatidão colorimétrica, tempo de resposta, áudio, vibração ou instalação no iPhone.
 
@@ -100,8 +100,8 @@ O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navega�
 
 O pedido inclui as funcionalidades da fx‑991LA X; por isso, os itens abaixo impedem declarar paridade funcional completa, mesmo que exista um caminho alternativo no aplicativo:
 
-1. OPTN e QR, CALC e SOLVE; integral, derivada e somatório diretamente pelas teclas físicas; catálogos CONST e CONV; RESET e opções completas de SETUP, inclusive GRAD.
-2. Conversões sexagesimais, fatoração FACT, notação ENG, logaritmo de base arbitrária e raiz de índice arbitrário por suas teclas; Pol/Rec, Rnd, número misto e UNDO. O menu Complexos fornece conversões polares, mas não reproduz os atalhos Pol/Rec.
+1. OPTN e QR permanecem indisponíveis; QR não transmite dados. Catálogos CONST e CONV e parte dos ajustes SETUP permanecem ausentes. CALC, SOLVE, integral, derivada, somatório e RESET são acessíveis pelas teclas usando formulários no visor; o fluxo não reproduz a máquina física.
+2. DMS, FACT, ENG, logaritmo de base e raiz de índice, Pol/Rec e Rnd agora têm caminhos pelas teclas, mas carecem de comparação abrangente de limites e apresentação. Número misto e UNDO permanecem ausentes.
 3. Representações matemáticas e edição estruturada completas, incluindo todos os formatos exatos, frações mistas, estruturas aninhadas arbitrárias, posição/seleção por toque idênticas e histórico de navegação. O posicionamento usa fronteiras visuais e foi exercitado em emulação, não comprovado em iPhone físico. A apresentação e os resultados exatos cobrem subconjuntos documentados, e não foram comparados exaustivamente ao aparelho.
 4. Os modos avançados não reproduzem integralmente o menu de ícones, sequência de teclas, registradores Mat/Vct, opções contextuais, limites e formatos da LA X. A análise por formulário e testes numéricos comprovam apenas as operações nomeadas na tabela, não todas as funções dos modos físicos.
 5. Os limites numéricos e comportamento em casos mal condicionados, singularidades, arredondamento, overflow, memória e erros não têm comparação completa com o aparelho. A memória das variáveis e o conjunto estatístico não persistem entre recargas; a planilha depende do armazenamento do navegador.
