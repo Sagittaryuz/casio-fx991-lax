@@ -12,3 +12,5 @@ As novas curvaturas são aproximações vetoriais responsivas da foto, sujeitas 
 
 ## Revisão pela referência anotada de 30/10/2026
 A referência marca somente OPTN, x, STO, 7, AC, 0 e = para cantos individualmente arredondados. O acabamento externo claro foi limitado à base; o visor conserva sua moldura. Marca e célula solar foram removidas por pedido, e o direcional foi colocado entre as fileiras de controles. As formas e os símbolos são reconstruções, não extrações da imagem.
+
+A revisão inicial não destacava os sete cantos porque regras posicionais anteriores tinham maior especificidade; os contornos agora usam precedência explícita e raios maiores. Os quatro botões metálicos foram alinhados aos pares da fileira inferior e os símbolos de fração, integral, raiz, potência, log e variável x foram redesenhados em SVG.

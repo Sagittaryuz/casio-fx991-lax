@@ -107,3 +107,23 @@ body{overscroll-behavior:none}
 .key-row .key[data-action="0"]{border-bottom-left-radius:32% 42%}
 .key-row .key[data-action="equals"]{border-bottom-right-radius:32% 42%}
 @media (orientation:landscape){.control-top .direction{top:30%}}
+/* Annotation correction: earlier positional selectors overrode these corners. */
+.key-row .key[data-action="optn"],.key-row .key[data-action="store"],.key-row .key[data-action="7"]{border-top-left-radius:42% 55% !important}
+.key-row .key[data-action="variableX"],.key-row .key[data-action="clear"]{border-top-right-radius:42% 55% !important}
+.key-row .key[data-action="0"]{border-bottom-left-radius:42% 55% !important}
+.key-row .key[data-action="equals"]{border-bottom-right-radius:42% 55% !important}
+.control-top .round-wrap{position:absolute;top:2%;width:9%;height:70%}
+.control-top .round-wrap:nth-child(1){left:2%}
+.control-top .round-wrap:nth-child(2){left:19.3%}
+.control-top .round-wrap:nth-child(4){left:71.7%}
+.control-top .round-wrap:nth-child(5){left:89%}
+.control-top .direction{width:31%;left:34.5%;top:54%}
+.key[data-action="power"]::after{content:none}
+.key[data-action="power"]{font-size:inherit}
+.key svg{display:inline-block;width:80%;height:86%;max-width:none;vertical-align:middle;fill:currentColor}
+@media (orientation:landscape){
+ .control-top .round-wrap{width:5%;height:100%;top:0}
+ .control-top .round-wrap:nth-child(1){left:3.5%}.control-top .round-wrap:nth-child(2){left:20.7%}
+ .control-top .round-wrap:nth-child(4){left:74.3%}.control-top .round-wrap:nth-child(5){left:91.5%}
+ .control-top .direction{width:15%;left:42.5%;top:35%}
+}
