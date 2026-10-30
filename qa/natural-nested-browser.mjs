@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require=createRequire(import.meta.url);const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
+try{const page=await browser.newPage({viewport:{width:393,height:852},deviceScaleFactor:2,hasTouch:true});await page.goto(process.env.CALC_URL||'http://127.0.0.1:4191/',{waitUntil:'networkidle'});const press=async a=>page.locator(`[data-action="${a}"]`).first().click();const field=page.locator('#expression');
+ for(const a of ['fraction','1','+','fraction','2','down','3','down','4','equals'])await press(a);
+ assert.equal(await field.inputValue(),'(1+(2)/(3))/(4)');assert.equal(await page.locator('#result').getAttribute('aria-label'),'5/12');assert.equal(await page.locator('.natural-expression .math-fraction').count(),2);
+ await field.evaluate(el=>{el.value='sqrt((9)/(4))^2';el.dispatchEvent(new Event('input',{bubbles:true}))});await press('equals');assert.equal(await page.locator('#result').getAttribute('aria-label'),'9/4');
+ await field.evaluate(el=>{el.value='(1+(2)/(3))/(4)';el.dispatchEvent(new Event('input',{bubbles:true}))});const glyph=page.locator('.natural-expression .math-char').filter({hasText:'3'});const r=await glyph.boundingBox();await page.touchscreen.tap(r.x+r.width*.8,r.y+r.height/2);assert.deepEqual(await field.evaluate(e=>[e.selectionStart,e.selectionEnd]),[9,9]);await press('del');await press('5');await press('equals');assert.equal(await page.locator('#result').getAttribute('aria-label'),'7/20');
+ await field.evaluate(el=>{el.value='12345';el.dispatchEvent(new Event('input',{bubbles:true}))});const chars=page.locator('.natural-expression .math-char');const b=await chars.nth(1).boundingBox(),e=await chars.nth(3).boundingBox();await page.mouse.move(b.x,b.y+b.height/2);await page.mouse.down();await page.mouse.move(e.x+e.width,e.y+e.height/2,{steps:3});await page.mouse.up();assert.deepEqual(await field.evaluate(e=>[e.selectionStart,e.selectionEnd]),[1,4]);await press('9');assert.equal(await field.inputValue(),'195');console.log('Nested natural display, touch editing and selection passed');
+}finally{await browser.close()}

@@ -1,6 +1,6 @@
 import './style.css';
 import './natural-display.css';
-import { renderNatural } from './natural-display.js';
+import { renderNatural, naturalOffsetAt, fractionTarget } from './natural-display.js';
 import { evaluate, formatResult } from './engine.js';
 import { exactResult } from './exact.js';
 import { openModes } from './modes-ui.js';
@@ -25,7 +25,7 @@ const field=document.querySelector('#expression'), result=document.querySelector
 let shift=false, alpha=false, storing=false, recalling=false, angle='DEG', ans=0, off=false, done=false, exact=null, decimal='0', showExact=false;
 const editor=new CalculatorEditor();
 const naturalExpression=document.querySelector('#natural-expression');
-function refreshExpression(){renderNatural(naturalExpression,field.value,document.activeElement===field?field.selectionStart:null);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
+function refreshExpression(){renderNatural(naturalExpression,field.value,document.activeElement===field?field.selectionStart:null,field.selectionEnd);const caret=naturalExpression.querySelector('.math-caret');if(caret){const bounds=naturalExpression.getBoundingClientRect(),mark=caret.getBoundingClientRect();if(mark.right>bounds.right)naturalExpression.scrollLeft+=mark.right-bounds.right+4;else if(mark.left<bounds.left)naturalExpression.scrollLeft-=bounds.left-mark.left+4;}}
 function setResult(value){value=String(value);result.setAttribute('aria-label',value);if(value.includes('/'))renderNatural(result,value);else result.textContent=value;}
 function insert(str){if(done){field.value=/^[+*/^\-]$/.test(str)?'Ans':'';field.setSelectionRange(field.value.length,field.value.length);done=false} const start=field.selectionStart??field.value.length, end=field.selectionEnd??start;field.value=field.value.slice(0,start)+str+field.value.slice(end);field.focus();field.setSelectionRange(start+str.length,start+str.length)}
 function message(s){status.textContent=s;setTimeout(()=>status.textContent='CALCULAR',2500)}
@@ -41,7 +41,7 @@ function press(action){if(off&&action!=='on')return;let shifted=shift, alphad=al
  if(action==='menu'){if(shifted){angle=angle==='DEG'?'RAD':'DEG';mode.textContent=angle==='DEG'?'D':'R';message(angle)}else openModes({angle});return}
  if(action==='clear'){storing=false;recalling=false;if(shifted){off=true;document.querySelector('.display').classList.add('off')}else{field.value='';setResult('0');done=false}return}
  if(action==='del'){if(shifted){message('INSERÇÃO ATIVA');return}let start=field.selectionStart??field.value.length,end=field.selectionEnd??start;if(start===end&&start>0)start--;field.value=field.value.slice(0,start)+field.value.slice(end);field.focus();field.setSelectionRange(start,start);return}
- if(action==='up'||action==='down'){const p=field.selectionStart??0;const str=field.value;const matches=[...str.matchAll(/\(([^()]*)\)\/\(([^()]*)\)/g)];const pair=matches.find(m=>p>=m.index&&p<=m.index+m[0].length);if(pair){const denominator=pair.index+pair[1].length+4+pair[2].length;const target=action==='down'?denominator:pair.index+1+pair[1].length;field.focus();field.setSelectionRange(target,target)}return}
+ if(action==='up'||action==='down'){const p=field.selectionStart??0;const target=fractionTarget(field.value,p,action);if(target!==null){field.focus();field.setSelectionRange(target,target)}return}
  if(action==='left'||action==='right'){const p=field.selectionStart??0;field.focus();field.setSelectionRange(Math.max(0,Math.min(field.value.length,p+(action==='left'?-1:1))),Math.max(0,Math.min(field.value.length,p+(action==='left'?-1:1))));return}
  if(action==='unsupported'){message('NÃO DISPONÍVEL');return}
  if(action==='toggleExact'){if(shifted){message('NÃO DISPONÍVEL');return}if(exact!==null){showExact=!showExact;setResult(showExact?exact:decimal)}return}
@@ -65,7 +65,13 @@ document.addEventListener('keydown',e=>{if(document.querySelector('.mode-dialog'
 
 if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 
+field.addEventListener('input',()=>{done=false});
 for(const event of ['input','keyup','click','select','focus','blur']) field.addEventListener(event,()=>queueMicrotask(refreshExpression));
 app.addEventListener('click',()=>queueMicrotask(refreshExpression));
 document.addEventListener('keydown',()=>queueMicrotask(refreshExpression));
 refreshExpression();
+
+let touchAnchor=null;
+naturalExpression.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();done=false;const p=naturalOffsetAt(naturalExpression,e.clientX,e.clientY);touchAnchor=p;field.focus({preventScroll:true});field.setSelectionRange(p,p);naturalExpression.setPointerCapture(e.pointerId);refreshExpression()});
+naturalExpression.addEventListener('pointermove',e=>{if(touchAnchor===null||!naturalExpression.hasPointerCapture(e.pointerId))return;const p=naturalOffsetAt(naturalExpression,e.clientX,e.clientY);field.setSelectionRange(Math.min(touchAnchor,p),Math.max(touchAnchor,p),p<touchAnchor?'backward':'forward');refreshExpression()});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])naturalExpression.addEventListener(type,()=>{touchAnchor=null});
