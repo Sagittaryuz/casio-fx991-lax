@@ -15,3 +15,5 @@ O motor inclui aritmética, trigonometria, logaritmos, frações e algumas raíz
 As duas fotos fornecidas retratam a fx-991EX. A imagem da fx-991LA X no [guia oficial](https://edu.casio.com/support/qsg_es/pdf/991LAX/ALL_CASIO_QuickStartGuide_fx-991LA_X_es.pdf) confirma a identificação LA X e a tecla decimal com vírgula. A estrutura visual aproxima o aparelho usando camadas e controles individuais; a fidelidade física e o comportamento em iPhone real ainda precisam de validação.
 
 Após o primeiro carregamento completo, o cache permite uso offline; testado localmente no Chromium, ainda não em iPhone físico.
+
+A matriz de cobertura detalhada está em [PARIDADE.md](PARIDADE.md). Peças exportáveis em alta resolução estão em [assets-export](assets-export/README.md). A planilha guarda dados no armazenamento local do navegador, sujeito a remoção ou indisponibilidade.

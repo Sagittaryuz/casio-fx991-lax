@@ -1,0 +1,11 @@
+.expression-wrap{position:relative;min-height:0;height:41%;width:100%;overflow:hidden}
+.display .expression-wrap input{position:absolute;inset:0;width:100%;height:100%;opacity:0;z-index:2;cursor:text}
+.natural-expression{position:absolute;inset:0;display:flex;align-items:center;white-space:nowrap;overflow:auto;scrollbar-width:none;font:clamp(12px,4.2vw,22px) 'Times New Roman',serif;color:#101919;pointer-events:none}
+.natural-expression::-webkit-scrollbar{display:none}
+.math-fraction{display:inline-flex;vertical-align:middle;flex-direction:column;align-items:stretch;text-align:center;line-height:1;font-size:.76em;margin:0 .12em;min-width:.65em}
+.math-numerator{border-bottom:1px solid currentColor;padding:0 .1em .05em}.math-denominator{padding:.05em .1em 0}
+.math-root{display:inline-flex;align-items:stretch;vertical-align:middle}.math-root-sign{font-size:1.25em;line-height:1}.math-radicand{border-top:1px solid currentColor;padding:0 .08em;line-height:1.1}
+.math-power{display:inline-block;white-space:nowrap}.math-power sup{font-size:.67em;vertical-align:super}
+.math-caret{display:inline-block;width:1px;height:1em;vertical-align:middle;background:#17221c;animation:cursor-blink 1.1s step-end infinite}
+@keyframes cursor-blink{50%{opacity:0}}
+@media(max-height:500px) and (orientation:landscape){.natural-expression{font-size:11px}}

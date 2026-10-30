@@ -38,6 +38,19 @@ export class Spreadsheet {
       return evaluate(expr,this.options);
     } finally {active.delete(cell);}
   }
+  /** Serializable raw entries, preserving formulas rather than their displayed values. */
+  snapshot() { return {version:1,cells:Object.fromEntries(this.cells)}; }
+  static fromSnapshot(snapshot,options={}) {
+    if (!snapshot || typeof snapshot!=='object' || Array.isArray(snapshot) || snapshot.version!==1 || !snapshot.cells || typeof snapshot.cells!=='object' || Array.isArray(snapshot.cells)) throw Error('Invalid spreadsheet snapshot');
+    const entries=Object.entries(snapshot.cells);
+    if(entries.length>225)throw Error('Invalid spreadsheet snapshot');
+    const result=new Spreadsheet(options);
+    for(const [cell,raw] of entries){
+      if(typeof raw!=='string'||raw.length>10000||cell!==cell.toUpperCase())throw Error('Invalid spreadsheet snapshot');
+      coordinate(cell);result.set(cell,raw);
+    }
+    return result;
+  }
   /** Copy a cell, adjusting relative references; $ anchors column or row. */
   copy(from,to) {
     from=from.toUpperCase();to=to.toUpperCase();const f=coordinate(from),t=coordinate(to);
@@ -52,4 +65,20 @@ export class Spreadsheet {
   move(from,to) {from=from.toUpperCase();to=to.toUpperCase();coordinate(from);coordinate(to);if(from===to)return;const raw=this.get(from);this.set(to,raw);this.clear(from);}
   /** Fill a rectangular range by copying the top-left cell, adjusting references. */
   fill(from,to) {const cells=references(from,to);const source=cells[0];for(const c of cells.slice(1))this.copy(source,c);}
+}
+
+export const SPREADSHEET_STORAGE_KEY='fx991lax.spreadsheet.v1';
+/** On corrupt input, leave the original storage untouched and block automatic replacement. */
+export function loadSpreadsheet(storage, options={}) {
+  if(!storage)return {sheet:new Spreadsheet(options),blocked:false,error:'Armazenamento indisponível. A planilha não será salva neste dispositivo.'};
+  try {
+    const raw=storage.getItem(SPREADSHEET_STORAGE_KEY);
+    if(raw===null)return {sheet:new Spreadsheet(options),blocked:false,error:null};
+    try{return {sheet:Spreadsheet.fromSnapshot(JSON.parse(raw),options),blocked:false,error:null};}
+    catch{return {sheet:new Spreadsheet(options),blocked:true,error:'Dados salvos inválidos. Eles foram preservados; a gravação automática está suspensa.'};}
+  } catch {return {sheet:new Spreadsheet(options),blocked:true,error:'Não foi possível ler a planilha salva. Verifique o armazenamento do navegador.'};}
+}
+export function saveSpreadsheet(storage,sheet) {
+  if(!storage)return false;
+  try {storage.setItem(SPREADSHEET_STORAGE_KEY,JSON.stringify(sheet.snapshot()));return true;} catch{return false;}
 }
