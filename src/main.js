@@ -51,3 +51,5 @@ function press(action){if(off&&action!=='on')return;let shifted=shift, alphad=al
 app.addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(b)press(b.dataset.action)});
 field.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='='){e.preventDefault();press('equals')}if(e.key==='Escape'){e.preventDefault();press('clear')}});
 document.addEventListener('keydown',e=>{if(e.target===field||e.ctrlKey||e.metaKey||e.altKey)return;if(/^[0-9.,+\-*/^()]$/.test(e.key)){e.preventDefault();insert(e.key==='.'?',':e.key)}else if(e.key==='Enter'||e.key==='='){e.preventDefault();press('equals')}else if(e.key==='Backspace'){e.preventDefault();press('del')}else if(e.key==='Escape'){press('clear')}});
+
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));

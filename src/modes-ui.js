@@ -1,11 +1,15 @@
 import * as L from './linear.js';
 import * as S from './statistics.js';
 import * as M from './modes.js';
+import * as C from './calculus.js';
 import { Spreadsheet } from './spreadsheet.js';
 const Sheet = { calculate(cells) { const sheet=new Spreadsheet(); for(const [address,value] of Object.entries(cells)) sheet.set(address,String(value)); return Object.fromEntries(Object.keys(cells).map(address=>[address,sheet.value(address)])); } };
 
 // Each example is a JSON argument list, making dimensions explicit and editable.
 const modes = [
+ ['Cálculo','Derivada','derivative',['4*x^2-5*x',0.2],C],
+ ['Cálculo','Integral','integral',['1/x',2,5],C],
+ ['Cálculo','Somatório','summation',['x^2+1',-3,7],C],
  ['Complexos','Soma','complexOperation',['2+3i','+','5-7i'],M],
  ['Complexos','Produto','complexOperation',['3-2i','*','5+6i'],M],
  ['Complexos','Forma polar','complexPolar',['3+4i','DEG'],M],
