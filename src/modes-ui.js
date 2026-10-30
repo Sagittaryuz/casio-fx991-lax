@@ -7,6 +7,15 @@ import { mountCalcSolve } from './ui-calc-solve.js';
 import { mountSetup } from './settings.js';
 import { mountCatalog } from './ui-catalog.js';
 import { mountMenuScreen } from './menu-screen.js';
+import { mountNativeSetup } from './native-setup.js';
+import { mountNativeEquation } from './native-equation.js';
+import { mountNativeSheet } from './native-sheet.js';
+import { mountNativeLinear } from './native-linear.js';
+import { mountNativeStatistics } from './native-statistics.js';
+import { mountNativeComplexBase } from './native-complex-base.js';
+import { mountNativeTable } from './native-table.js';
+import { mountNativeDistribution } from './native-distribution.js';
+import { mountNativeInequalityRatio } from './native-inequality-ratio.js';
 
 const modes = [
  ['Cálculo','Cálculo'],['Complexos','Complexos'],['Base-N','Base-N'],
@@ -25,7 +34,7 @@ export function openModes(options={}) {
  const syncSize=()=>{const f=face.getBoundingClientRect(),b=bezel.getBoundingClientRect();Object.assign(panel.style,{left:`${b.left-f.left}px`,top:`${b.top-f.top}px`,width:`${b.width}px`,height:`${b.height}px`});};
  const observer=new ResizeObserver(syncSize);observer.observe(face);syncSize();
  allModes.forEach(([name,id],i)=>{const o=document.createElement('option');o.value=id;o.textContent=`${i+1}. ${name}`;picker.append(o)});
- function show(i){hideOptions();if(i<0)i=0;activeIndex=i;picker.value=allModes[i][1];for(const entry of cache.values())entry.node.hidden=true;let entry=cache.get(i);if(!entry){const node=document.createElement('div');content.append(node);let c;const id=allModes[i][1];if(['const','conv'].includes(id))c=mountCatalog(node,id,{...options,onAccept:sessionOptions.onAccept});else if(id==='setup')c=mountSetup(node,options.setupStore,{onApply:(value,warning)=>{options.setupCallbacks?.onApply?.(value,warning);close()},onCancel:()=>{options.setupCallbacks?.onCancel?.();close()},onResetAll:options.setupCallbacks?.onResetAll});else if(['calc','solve'].includes(id))c=mountCalcSolve(node,id,{...options,onAccept:sessionOptions.onAccept});else if(['matrix','vector','equation'].includes(id))c=mountLinear(node,id,sessionOptions);else if(['statistics','distribution','table','spreadsheet'].includes(id))c=mountStats(node,id,sessionOptions);else c=mountMisc(node,id,sessionOptions);entry={node,controller:c};cache.set(i,entry)}entry.node.hidden=false;activeField=null;panel.scrollTop=0;}
+ function show(i){hideOptions();if(i<0)i=0;if(['equation','spreadsheet','matrix','vector','statistics','Complexos','Base-N','table','distribution','Desigualdade','Proporção'].includes(allModes[i][1])){const id=allModes[i][1];close();openNativePanel(id,options);return}activeIndex=i;picker.value=allModes[i][1];for(const entry of cache.values())entry.node.hidden=true;let entry=cache.get(i);if(!entry){const node=document.createElement('div');content.append(node);let c;const id=allModes[i][1];if(['const','conv'].includes(id))c=mountCatalog(node,id,{...options,onAccept:sessionOptions.onAccept});else if(id==='setup')c=mountSetup(node,options.setupStore,{onApply:(value,warning)=>{options.setupCallbacks?.onApply?.(value,warning);close()},onCancel:()=>{options.setupCallbacks?.onCancel?.();close()},onResetAll:options.setupCallbacks?.onResetAll});else if(['calc','solve'].includes(id))c=mountCalcSolve(node,id,{...options,onAccept:sessionOptions.onAccept});else if(['matrix','vector','equation'].includes(id))c=mountLinear(node,id,sessionOptions);else if(['statistics','distribution','table','spreadsheet'].includes(id))c=mountStats(node,id,sessionOptions);else c=mountMisc(node,id,sessionOptions);entry={node,controller:c};cache.set(i,entry)}entry.node.hidden=false;activeField=null;panel.scrollTop=0;}
 
  const optionView=document.createElement('section');optionView.className='context-options';optionView.setAttribute('aria-label','Opções do modo');optionView.hidden=true;panel.append(optionView);
  function hideOptions(){if(!optionsOpen)return;optionsOpen=false;optionView.hidden=true;content.hidden=false;picker.disabled=false;optionButtons=[];if(returnFocus?.isConnected){returnFocus.focus();returnFocus.scrollIntoView({block:'nearest'});}returnFocus=null;}
@@ -54,7 +63,7 @@ export function openModes(options={}) {
   if(action==='optn'){showOptions(shifted);return;}
   if(optionsOpen){if(action==='up'||action==='down'){optionIndex=Math.max(0,Math.min(optionButtons.length-1,optionIndex+(action==='up'?-1:1)));optionButtons[optionIndex]?.focus()}else if(action==='equals'){(document.activeElement?.closest('.context-options button')||optionButtons[optionIndex])?.click()}else if(action==='menu'||action==='clear')hideOptions();return;}
   if(action==='clear'&&allModes[activeIndex][1]==='setup'){close();return}
-  if(action==='menu'){close();openIconMenu(options);return;}
+  if(action==='menu'){close();if(shifted&&options.onOpenSetup)options.onOpenSetup();else openIconMenu(options);return;}
   if(action==='on')return;
   if(action==='up'||action==='down'){if(document.activeElement===picker){show((activeIndex+(action==='up'?-1:1)+allModes.length)%allModes.length);picker.focus()}else focusStep(action==='up'?-1:1);return;}
   if(document.activeElement===picker&&/^[1-9]$/.test(action)){show(Number(action)-1);picker.focus();return;}
@@ -77,9 +86,9 @@ export function openModes(options={}) {
 }
 
 /** Open staged settings in the calculator LCD; saving and reset remain explicit. */
-export function openSetup(store,callbacks={}) {return openModes({...callbacks,initialMode:'setup',setupStore:store,setupCallbacks:callbacks})}
+export function openSetup(store,callbacks={}) {return openNativePanel('setup',{...callbacks,store})}
 /** Discard in-memory mode editors after explicit full reset. */
-export function resetModes(){for(const entry of sessionCache.values()){if(typeof entry.controller==='function')entry.controller();else entry.controller?.destroy?.();entry.node.remove()}sessionCache.clear()}
+export function resetModes(){for(const entry of nativeSessions.values())entry.controller.destroy();nativeSessions.clear();for(const entry of sessionCache.values()){if(typeof entry.controller==='function')entry.controller();else entry.controller?.destroy?.();entry.node.remove()}sessionCache.clear()}
 
 /** Open contextual calculation options without changing the current expression. */
 export function openOptions(options={}){return openModes({...options,initialMode:'Cálculo',initialOptions:true})}
@@ -91,8 +100,28 @@ export function openIconMenu(options={}) {
  const panel=document.createElement('section');panel.className='mode-dialog fx-menu-host';panel.setAttribute('role','region');panel.setAttribute('aria-label','Menu principal');face.append(panel);
  const sync=()=>{const f=face.getBoundingClientRect(),b=bezel.getBoundingClientRect();Object.assign(panel.style,{left:`${b.left-f.left}px`,top:`${b.top-f.top}px`,width:`${b.width}px`,height:`${b.height}px`})};const observer=new ResizeObserver(sync);observer.observe(face);sync();
  let screen;function close(){observer.disconnect();face.removeEventListener('click',capture,true);face.removeEventListener('pointerdown',prevent,true);screen?.destroy();panel.remove()}
- screen=mountMenuScreen(panel,{onSelect:id=>{close();if(id!=='Cálculo')openModes({...options,initialMode:id});else face.querySelector('[data-action=menu]')?.focus()},onCancel:()=>{close();face.querySelector('[data-action=menu]')?.focus()}});
- function capture(e){const b=e.target.closest('button[data-action]');if(!b||!face.contains(b)||panel.contains(b))return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.action==='menu'){close();face.querySelector('[data-action=menu]')?.focus()}else screen.press(b.dataset.action)}
+ screen=mountMenuScreen(panel,{onSelect:id=>{close();if(['equation','spreadsheet','matrix','vector','statistics','Complexos','Base-N','table','distribution','Desigualdade','Proporção'].includes(id))openNativePanel(id,options);else if(id!=='Cálculo')openModes({...options,initialMode:id});else face.querySelector('[data-action=menu]')?.focus()},onCancel:()=>{close();face.querySelector('[data-action=menu]')?.focus()}});
+ let iconShift=false;function capture(e){const b=e.target.closest('button[data-action]');if(!b||!face.contains(b)||panel.contains(b))return;e.preventDefault();e.stopImmediatePropagation();const action=b.dataset.action;if(action==='shift'){iconShift=!iconShift;screen.press(action);return}const shifted=iconShift;iconShift=false;if(action==='menu'){close();if(shifted&&options.onOpenSetup)options.onOpenSetup();else face.querySelector('[data-action=menu]')?.focus()}else screen.press(action)}
  function prevent(e){if(e.target.closest('button[data-action]')&&!panel.contains(e.target))e.preventDefault()}
  face.addEventListener('click',capture,true);face.addEventListener('pointerdown',prevent,true);screen.focus();
+}
+
+// SETUP and Equation use textual calculator screens; other modes retain their existing editors.
+const nativeSessions=new Map();
+export function openNativePanel(kind,options={}){
+ if(document.querySelector('.mode-dialog'))return;
+ const face=document.querySelector('.face'),bezel=face.querySelector('.display-bezel'),panel=document.createElement('section');
+ panel.className='mode-dialog native-mode-host';panel.setAttribute('role','region');panel.setAttribute('aria-label',kind==='setup'?'Configuração':kind==='spreadsheet'?'Planilha':kind==='matrix'?'Matriz':kind==='vector'?'Vetor':kind==='statistics'?'Estatística':kind==='Complexos'?'Complexos':kind==='Base-N'?'Base-N':kind==='table'?'Tabela':kind==='distribution'?'Distribuição':kind==='Desigualdade'?'Desigualdade':kind==='Proporção'?'Proporção':'Equação e função');panel.style.padding='0';panel.style.overflow='hidden';face.append(panel);
+ const sync=()=>{const f=face.getBoundingClientRect(),b=bezel.getBoundingClientRect();Object.assign(panel.style,{left:`${b.left-f.left}px`,top:`${b.top-f.top}px`,width:`${b.width}px`,height:`${b.height}px`})};const observer=new ResizeObserver(sync);observer.observe(face);sync();
+ let session=nativeSessions.get(kind),controller;
+ function close(){observer.disconnect();face.removeEventListener('click',capture,true);face.removeEventListener('pointerdown',prevent,true);if(kind==='setup')controller?.destroy();else session?.node.remove();panel.remove();face.querySelector('[data-action=menu]')?.focus()}
+ if(kind==='setup')controller=mountNativeSetup(panel,options.store,{onApply:(value,warning)=>{options.onApply?.(value,warning);close()},onCancel:()=>{options.onCancel?.();close()},onResetAll:options.onResetAll});
+ else if(['equation','spreadsheet','matrix','vector','statistics','Complexos','Base-N','table','distribution','Desigualdade','Proporção'].includes(kind)){if(!session){const node=document.createElement('div');node.style.cssText='width:100%;height:100%';session={node,exit:()=>{},controller:null,config:{angle:options.angle||'DEG',onCancel:()=>session.exit(),onBack:()=>session.exit()}};session.controller=kind==='equation'?mountNativeEquation(node,session.config):kind==='spreadsheet'?mountNativeSheet(node,session.config):kind==='statistics'?mountNativeStatistics(node,session.config):kind==='table'?mountNativeTable(node,session.config):kind==='distribution'?mountNativeDistribution(node,session.config):['Desigualdade','Proporção'].includes(kind)?mountNativeInequalityRatio(node,kind,session.config):['Complexos','Base-N'].includes(kind)?mountNativeComplexBase(node,kind,session.config):mountNativeLinear(node,kind,session.config);nativeSessions.set(kind,session)}session.exit=close;session.config.angle=options.angle||'DEG';session.controller.setAngle?.(session.config.angle);panel.append(session.node);controller=session.controller;}
+ else {panel.remove();observer.disconnect();return}
+ let shiftPending=false,qrNote=null;
+ function dismissQr(){qrNote?.remove();qrNote=null;controller.focus()}
+ function showQr(){qrNote=document.createElement('div');qrNote.className='native-qr-note';qrNote.setAttribute('role','status');qrNote.innerHTML='<strong>QR indisponível</strong><span>Nenhum dado é transmitido.</span><button type="button">Voltar</button>';qrNote.querySelector('button').addEventListener('click',dismissQr);qrNote.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();e.stopPropagation();dismissQr()}});panel.append(qrNote);qrNote.querySelector('button').focus()}
+ function capture(e){const b=e.target.closest('button[data-action]');if(!b||!face.contains(b)||panel.contains(b))return;e.preventDefault();e.stopImmediatePropagation();const action=b.dataset.action;if(qrNote){if(['clear','menu','optn','equals','left'].includes(action))dismissQr();return}if(action==='shift'){shiftPending=!shiftPending;controller.press(action);return}if(action==='optn'&&shiftPending){controller.press('shift');shiftPending=false;showQr();return}const shifted=shiftPending;shiftPending=false;if(action==='menu'){if(shifted)controller.press('shift');close();if(shifted&&options.onOpenSetup)options.onOpenSetup();else openIconMenu(options)}else controller.press(action)}
+ function prevent(e){if(e.target.closest('button[data-action]')&&!panel.contains(e.target))e.preventDefault()}
+ face.addEventListener('click',capture,true);face.addEventListener('pointerdown',prevent,true);controller.focus();
 }
