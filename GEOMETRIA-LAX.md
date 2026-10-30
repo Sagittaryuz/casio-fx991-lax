@@ -9,3 +9,6 @@ Referências inspecionadas: fotografia LA X 550×550 fornecida (EC4AE802…png) 
 - Teclas e legendas são elementos distintos e interativos. A redisposição paisagem conserva a ordem funcional, mas não tem referência física equivalente no dispositivo retratado.
 
 As novas curvaturas são aproximações vetoriais responsivas da foto, sujeitas ao tamanho do viewport e a uma comparação física posterior. Não constituem medição dimensional ou prova de equivalência de materiais.
+
+## Revisão pela referência anotada de 30/10/2026
+A referência marca somente OPTN, x, STO, 7, AC, 0 e = para cantos individualmente arredondados. O acabamento externo claro foi limitado à base; o visor conserva sua moldura. Marca e célula solar foram removidas por pedido, e o direcional foi colocado entre as fileiras de controles. As formas e os símbolos são reconstruções, não extrações da imagem.

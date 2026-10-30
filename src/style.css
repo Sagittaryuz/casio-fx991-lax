@@ -68,3 +68,42 @@ body{overscroll-behavior:none}
 .row-0 .key-cell:last-child .science{border-radius:10% 30% 25% 10% / 20% 28% 28% 20%}
 
 @font-face{font-family:LCDPixel;src:url('/fonts/VT323-Regular.ttf') format('truetype');font-display:swap}.display output,.status{font-family:LCDPixel,monospace}.fx-menu-host{padding:0;border-radius:3px}.fx-menu-label,.fx-menu-icon span{font-family:LCDPixel,monospace!important}
+
+/* User's annotated LA X layout: only the lower outer trim is visible. */
+.calculator{padding:0 0 clamp(5px,2cqw,12px);border-radius:0 0 7% 7% / 0 0 3% 3%;background:linear-gradient(#aaa,#f3f3f1 70%,#999);box-shadow:none}
+.face{position:relative;border-radius:0 0 6% 6% / 0 0 2% 2%;padding-top:max(2%,env(safe-area-inset-top,0px));padding-bottom:max(2%,env(safe-area-inset-bottom,0px));}
+.display-bezel{height:19%;flex:none}
+.control-top{height:13%;flex:none;position:relative;align-items:flex-start;padding-top:1%;}
+.round-wrap,.round-wrap.menu{width:10%;height:70%;justify-content:flex-start;gap:8%}
+.round-wrap .round{width:100%;aspect-ratio:1;flex:none}
+.direction{position:absolute;z-index:3;width:31%;height:auto;max-height:none;aspect-ratio:1.55;left:34.5%;top:25%}
+.keyboard{gap:1.8%}
+.row-0{grid-template-columns:repeat(6,1fr);gap:2.7%;padding:0}
+.row-0 .key-cell:nth-child(1){grid-column:1}.row-0 .key-cell:nth-child(2){grid-column:2;margin:0}.row-0 .key-cell:nth-child(3){grid-column:5;margin:0}.row-0 .key-cell:nth-child(4){grid-column:6}
+.science{border-radius:8% / 14%}
+.number{border-radius:8% / 14%}
+.row-1 .key-cell:first-child .science,.row-2 .key-cell:first-child .science,.row-3 .key-cell:first-child .science,.row-1 .key-cell:last-child .science,.row-2 .key-cell:last-child .science,.row-3 .key-cell:last-child .science{border-radius:8% / 14%}
+.row-4 .key-cell:first-child .number,.row-5 .key-cell:first-child .number,.row-6 .key-cell:first-child .number,.row-4 .key-cell:last-child .number,.row-5 .key-cell:last-child .number,.row-6 .key-cell:last-child .number,.row-7 .key-cell:first-child .number,.row-7 .key-cell:last-child .number,.row-0 .key-cell:first-child .science,.row-0 .key-cell:last-child .science{border-radius:8% / 14%}
+.key[data-action="optn"],.key[data-action="store"],.key[data-action="7"]{border-top-left-radius:32% 42%}
+.key[data-action="variableX"],.key[data-action="clear"]{border-top-right-radius:32% 42%}
+.key[data-action="0"]{border-bottom-left-radius:32% 42%}
+.key[data-action="equals"]{border-bottom-right-radius:32% 42%}
+.key svg{height:85%;max-width:75%;vertical-align:middle}
+@media (orientation:landscape){
+ .calculator{padding:0 0 clamp(4px,1cqh,8px);border-radius:0 0 3% 3%}
+ .face{display:flex;flex-direction:column;padding-top:max(1%,env(safe-area-inset-top,0px));padding-bottom:max(1%,env(safe-area-inset-bottom,0px));}
+ .display-bezel{height:20%;padding:1.2%}
+ .control-top{height:13%;padding-top:0}
+ .round-wrap,.round-wrap.menu{height:100%;width:5%}
+ .round-wrap .round{width:min(100%,6cqh)}
+ .direction{width:15%;left:42.5%;top:20%;aspect-ratio:1.55}
+ .keyboard{height:auto;gap:1.5%}
+ .row-0{grid-template-columns:repeat(6,1fr);gap:2%}
+ .secondary{font-size:clamp(5px,1.65cqh,8px)}
+}
+.control-top .direction{top:55%}
+.key-row .key[data-action="optn"],.key-row .key[data-action="store"],.key-row .key[data-action="7"]{border-top-left-radius:32% 42%}
+.key-row .key[data-action="variableX"],.key-row .key[data-action="clear"]{border-top-right-radius:32% 42%}
+.key-row .key[data-action="0"]{border-bottom-left-radius:32% 42%}
+.key-row .key[data-action="equals"]{border-bottom-right-radius:32% 42%}
+@media (orientation:landscape){.control-top .direction{top:30%}}
