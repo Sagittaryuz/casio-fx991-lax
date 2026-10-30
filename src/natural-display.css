@@ -10,3 +10,5 @@
 @keyframes cursor-blink{50%{opacity:0}}
 @media(max-height:500px) and (orientation:landscape){.natural-expression{font-size:11px}}
 .math-mixed{display:inline-flex;align-items:center;gap:.1em}.math-whole{display:inline-flex;align-items:baseline}
+
+.natural-expression{font-family:LCDPixel,monospace}.math-root-sign{font-family:LCDPixel,serif}

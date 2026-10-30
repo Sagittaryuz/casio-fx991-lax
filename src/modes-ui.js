@@ -6,6 +6,7 @@ import { mountMisc } from './ui-misc.js';
 import { mountCalcSolve } from './ui-calc-solve.js';
 import { mountSetup } from './settings.js';
 import { mountCatalog } from './ui-catalog.js';
+import { mountMenuScreen } from './menu-screen.js';
 
 const modes = [
  ['Cálculo','Cálculo'],['Complexos','Complexos'],['Base-N','Base-N'],
@@ -52,7 +53,8 @@ export function openModes(options={}) {
   if(alphad){const map={negative:'A',dms:'B',inverse:'C',sin:'D',cos:'E',tan:'F',')':'x',toggleExact:'y',memory:'M',exp:'e',calc:'='};if(Object.hasOwn(map,action))action=map[action];else return;}
   if(action==='optn'){showOptions(shifted);return;}
   if(optionsOpen){if(action==='up'||action==='down'){optionIndex=Math.max(0,Math.min(optionButtons.length-1,optionIndex+(action==='up'?-1:1)));optionButtons[optionIndex]?.focus()}else if(action==='equals'){(document.activeElement?.closest('.context-options button')||optionButtons[optionIndex])?.click()}else if(action==='menu'||action==='clear')hideOptions();return;}
-  if(action==='menu'){picker.focus();panel.scrollTop=0;return;}
+  if(action==='clear'&&allModes[activeIndex][1]==='setup'){close();return}
+  if(action==='menu'){close();openIconMenu(options);return;}
   if(action==='on')return;
   if(action==='up'||action==='down'){if(document.activeElement===picker){show((activeIndex+(action==='up'?-1:1)+allModes.length)%allModes.length);picker.focus()}else focusStep(action==='up'?-1:1);return;}
   if(document.activeElement===picker&&/^[1-9]$/.test(action)){show(Number(action)-1);picker.focus();return;}
@@ -81,3 +83,16 @@ export function resetModes(){for(const entry of sessionCache.values()){if(typeof
 
 /** Open contextual calculation options without changing the current expression. */
 export function openOptions(options={}){return openModes({...options,initialMode:'Cálculo',initialOptions:true})}
+
+/** Icon menu modeled on LA X guide p.3; original modes remain available after selection. */
+export function openIconMenu(options={}) {
+ if(document.querySelector('.mode-dialog')) return;
+ const face=document.querySelector('.face'),bezel=face.querySelector('.display-bezel');
+ const panel=document.createElement('section');panel.className='mode-dialog fx-menu-host';panel.setAttribute('role','region');panel.setAttribute('aria-label','Menu principal');face.append(panel);
+ const sync=()=>{const f=face.getBoundingClientRect(),b=bezel.getBoundingClientRect();Object.assign(panel.style,{left:`${b.left-f.left}px`,top:`${b.top-f.top}px`,width:`${b.width}px`,height:`${b.height}px`})};const observer=new ResizeObserver(sync);observer.observe(face);sync();
+ let screen;function close(){observer.disconnect();face.removeEventListener('click',capture,true);face.removeEventListener('pointerdown',prevent,true);screen?.destroy();panel.remove()}
+ screen=mountMenuScreen(panel,{onSelect:id=>{close();if(id!=='Cálculo')openModes({...options,initialMode:id});else face.querySelector('[data-action=menu]')?.focus()},onCancel:()=>{close();face.querySelector('[data-action=menu]')?.focus()}});
+ function capture(e){const b=e.target.closest('button[data-action]');if(!b||!face.contains(b)||panel.contains(b))return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.action==='menu'){close();face.querySelector('[data-action=menu]')?.focus()}else screen.press(b.dataset.action)}
+ function prevent(e){if(e.target.closest('button[data-action]')&&!panel.contains(e.target))e.preventDefault()}
+ face.addEventListener('click',capture,true);face.addEventListener('pointerdown',prevent,true);screen.focus();
+}

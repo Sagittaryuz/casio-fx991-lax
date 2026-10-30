@@ -53,3 +53,18 @@ body{overscroll-behavior:none}
 }
 .direction{height:auto;aspect-ratio:1.55;max-height:85%}
 @media (orientation:landscape){.direction{height:auto;aspect-ratio:1.55;max-height:85%}}
+
+/* LA X: position-specific end caps and a four-piece concave directional ring. */
+.direction{clip-path:none;border:0;border-radius:0;background:transparent url('/directional-lax.svg') center / 100% 100% no-repeat;filter:drop-shadow(0 2px 2px #0009)}
+.direction::before{display:none}
+.science{border-radius:12% / 25%}
+.row-1 .key-cell:first-child .science,.row-2 .key-cell:first-child .science,.row-3 .key-cell:first-child .science{border-radius:30% 10% 10% 25% / 28% 20% 20% 28%}
+.row-1 .key-cell:last-child .science,.row-2 .key-cell:last-child .science,.row-3 .key-cell:last-child .science{border-radius:10% 30% 25% 10% / 20% 28% 28% 20%}
+.row-4 .key-cell:first-child .number,.row-5 .key-cell:first-child .number,.row-6 .key-cell:first-child .number{border-radius:23% 8% 8% 20% / 27% 14% 14% 25%}
+.row-4 .key-cell:last-child .number,.row-5 .key-cell:last-child .number,.row-6 .key-cell:last-child .number{border-radius:8% 23% 20% 8% / 14% 27% 25% 14%}
+.row-7 .key-cell:first-child .number{border-radius:22% 8% 8% 30% / 23% 14% 14% 32%}
+.row-7 .key-cell:last-child .number{border-radius:8% 22% 30% 8% / 14% 23% 32% 14%}
+.row-0 .key-cell:first-child .science{border-radius:30% 10% 10% 25% / 28% 20% 20% 28%}
+.row-0 .key-cell:last-child .science{border-radius:10% 30% 25% 10% / 20% 28% 28% 20%}
+
+@font-face{font-family:LCDPixel;src:url('/fonts/VT323-Regular.ttf') format('truetype');font-display:swap}.display output,.status{font-family:LCDPixel,monospace}.fx-menu-host{padding:0;border-radius:3px}.fx-menu-label,.fx-menu-icon span{font-family:LCDPixel,monospace!important}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 108" preserveAspectRatio="none">
+ <defs>
+  <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#999d9d"/><stop offset=".22" stop-color="#1c1f20"/><stop offset=".72" stop-color="#08090a"/><stop offset="1" stop-color="#888b8a"/></linearGradient>
+  <linearGradient id="top" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#1c1f20"/><stop offset=".22" stop-color="#999e9d"/><stop offset=".5" stop-color="#e1e2df"/><stop offset=".78" stop-color="#555a5b"/><stop offset="1" stop-color="#101213"/></linearGradient>
+  <linearGradient id="side" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101213"/><stop offset=".3" stop-color="#a5a8a5"/><stop offset=".5" stop-color="#e1e2de"/><stop offset=".78" stop-color="#4c5151"/><stop offset="1" stop-color="#111314"/></linearGradient>
+  <linearGradient id="bottom" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#111314"/><stop offset=".3" stop-color="#8b8f8e"/><stop offset=".55" stop-color="#e0e1df"/><stop offset=".8" stop-color="#555a5a"/><stop offset="1" stop-color="#161819"/></linearGradient>
+ </defs>
+ <path d="M80 1 C102 1 123 14 145 31 Q159 41 159 54 Q159 67 145 77 C123 94 102 107 80 107 C58 107 37 94 15 77 Q1 67 1 54 Q1 41 15 31 C37 14 58 1 80 1Z" fill="url(#edge)" stroke="#080909" stroke-width="2"/>
+ <path d="M31 28 C47 15 64 5 80 5 C96 5 113 15 129 28 L104 45 Q80 27 56 45Z" fill="url(#top)" stroke="#090a0a" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M132 30 C147 39 155 46 155 54 C155 62 147 69 132 78 L104 63 Q115 54 104 45Z" fill="url(#side)" stroke="#090a0a" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M129 80 C113 93 96 103 80 103 C64 103 47 93 31 80 L56 63 Q80 81 104 63Z" fill="url(#bottom)" stroke="#090a0a" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M28 78 C13 69 5 62 5 54 C5 46 13 39 28 30 L56 45 Q45 54 56 63Z" fill="url(#side)" stroke="#090a0a" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M56 45 Q68 35 80 35 Q92 35 104 45 Q94 54 104 63 Q92 73 80 73 Q68 73 56 63 Q66 54 56 45Z" fill="#080a0a" stroke="#020303" stroke-width="2"/>
+</svg>

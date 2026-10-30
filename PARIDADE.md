@@ -14,7 +14,7 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 | ▶ | P — move cursor no campo de expressão. | — | — |
 | ▲ | P — move para numerador de fração `(...) / (...)`, inclusive grupos aninhados reconhecidos; fora desse padrão, não faz nada. Sem histórico de cálculos. | — | — |
 | ▼ | P — move para denominador de fração `(...) / (...)`, inclusive grupos aninhados reconhecidos; fora desse padrão, não faz nada. Sem histórico de cálculos. | — | — |
-| MENU | P — abre painel restrito ao visor, mantendo as teclas acessíveis; modos são selecionados em lista e usam formulários, não menu de ícones nem navegação idêntica à do aparelho. | P — SETUP com DEG/RAD/GRAD e FIX/SCI/NORM persistentes; não cobre todos os ajustes físicos. | — |
+| MENU | P — abre painel restrito ao visor, mantendo as teclas acessíveis; abre grade de ícones 4×2 e duas janelas 1–8 / 5–C, com setas, =, atalhos 1–9 e ALPHA+A/B/C; após selecionar, os modos usam formulários e não reproduzem todo o fluxo físico. | P — SETUP com DEG/RAD/GRAD e FIX/SCI/NORM persistentes; não cobre todos os ajustes físicos. | — |
 | ON | P — reexibe visor desligado; não reproduz ciclo de energia físico. | — | — |
 
 ## Teclas científicas
@@ -73,7 +73,7 @@ Nas teclas sem entrada Alpha mapeada, o app não oferece um segundo comando Alph
 
 ## Os 12 modos do guia oficial
 
-O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navegação usa painel contido no visor com formulários/tabelas próprios e teclas do corpo, não o menu de ícones e a edição em duas dimensões da máquina. O painel é rolável e seus formulários podem exigir rolagem em tela pequena; os dados dos modos ficam em sessão ao voltar/reabrir, com persistência adicional somente na planilha. Operações numéricas em dupla precisão não demonstram precisão nem comportamento idêntico ao aparelho.
+O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a seleção inicial usa grade de ícones reconstruída conforme o guia, mas as telas dos modos continuam usando formulários/tabelas próprios e teclas do corpo, não a edição em duas dimensões da máquina. O painel é rolável e seus formulários podem exigir rolagem em tela pequena; os dados dos modos ficam em sessão ao voltar/reabrir, com persistência adicional somente na planilha. Operações numéricas em dupla precisão não demonstram precisão nem comportamento idêntico ao aparelho.
 
 | Modo | O que está acessível no aplicativo | Lacunas específicas / verificação |
 |---|---|---|
@@ -103,7 +103,7 @@ O pedido inclui as funcionalidades da fx‑991LA X; por isso, os itens abaixo im
 1. OPTN contextual lista as operações e controles já implementados, sem reproduzir todas as opções físicas; QR permanece desativado e não transmite dados. CONST e CONV oferecem, respectivamente, 47 constantes CODATA 2010 e 40 direções, com confirmação; fatores e convenções constam de `CATALOG.md` e não foram confrontados dígito a dígito com o firmware. Parte dos ajustes SETUP permanece ausente. CALC, SOLVE, integral, derivada, somatório e RESET usam formulários no visor, com fluxo diferente do aparelho.
 2. DMS, FACT, ENG, logaritmo de base e raiz de índice, Pol/Rec e Rnd têm caminhos pelas teclas, mas carecem de comparação abrangente de limites e apresentação. Números mistos cobrem componentes inteiros não negativos com sinal externo; UNDO/refazer tem um nível e só opera no editor principal.
 3. Representações matemáticas e edição estruturada completas, incluindo todos os formatos exatos, todos os contextos de frações mistas, estruturas aninhadas arbitrárias, posição/seleção por toque idênticas e histórico de navegação. O posicionamento usa fronteiras visuais e foi exercitado em emulação, não comprovado em iPhone físico. A apresentação e os resultados exatos cobrem subconjuntos documentados, e não foram comparados exaustivamente ao aparelho.
-4. Os modos avançados não reproduzem integralmente o menu de ícones, sequência de teclas, registradores Mat/Vct, todas as opções contextuais, limites e formatos da LA X. A análise por formulário e testes numéricos comprovam apenas as operações nomeadas na tabela, não todas as funções dos modos físicos.
+4. Os modos avançados não reproduzem integralmente as telas internas, sequência de teclas, registradores Mat/Vct, todas as opções contextuais, limites e formatos da LA X. A análise por formulário e testes numéricos comprovam apenas as operações nomeadas na tabela, não todas as funções dos modos físicos.
 5. Os limites numéricos e comportamento em casos mal condicionados, singularidades, arredondamento, overflow, memória e erros não têm comparação completa com o aparelho. A memória das variáveis e o conjunto estatístico não persistem entre recargas; a planilha depende do armazenamento do navegador.
 
 As lacunas funcionais são trabalho de implementação e validação pendente; não há base para classificá-las como impossíveis apenas por não usar firmware proprietário. Também não há teste em iPhone físico nem comparação integral com uma unidade LA X. Esses limites visuais e de validação impedem afirmar réplica fiel, mesmo onde há resultados numéricos testados.

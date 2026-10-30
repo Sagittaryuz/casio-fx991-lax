@@ -19,3 +19,5 @@ Após o primeiro carregamento completo, o cache permite uso offline; testado loc
 A matriz de cobertura detalhada está em [PARIDADE.md](PARIDADE.md). Peças exportáveis em alta resolução estão em [assets-export](assets-export/README.md). A planilha guarda dados no armazenamento local do navegador, sujeito a remoção ou indisponibilidade.
 
 A calculadora usa a estrutura de viewport da HP12C: viewport-fit=cover, 100dvh, áreas seguras e redisposição em paisagem. Navegador Chromium emulado foi verificado; modo instalado e iPhone físico não foram verificados. Os modos usam o visor e as teclas da calculadora; a edição natural cobre um subconjunto de estruturas aninhadas. Consulte PARIDADE.md para lacunas.
+
+O menu inicial foi reconstruído a partir das páginas 2–3 do guia oficial LA X: grade 4×2, seleção por setas, =, números e ALPHA+A/B/C. As telas internas dos modos ainda usam controles próprios. A fonte pixel VT323 é uma aproximação independente por Peter Hull, sob SIL OFL 1.1; licença em public/fonts/VT323-OFL.txt e fonte https://github.com/google/fonts/tree/main/ofl/vt323. Não é fonte oficial Casio.

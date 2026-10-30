@@ -3,7 +3,7 @@ import './natural-display.css';
 import { renderNatural, naturalOffsetAt, fractionTarget } from './natural-display.js';
 import { evaluate, formatResult } from './engine.js';
 import { exactResult } from './exact.js';
-import { openModes, openSetup, openOptions, resetModes } from './modes-ui.js';
+import { openModes, openIconMenu, openSetup, openOptions, resetModes } from './modes-ui.js';
 import { createSettings, formatNumber } from './settings.js';
 import { SPREADSHEET_STORAGE_KEY } from './spreadsheet.js';
 import { CalculatorEditor } from './editor.js';
@@ -62,7 +62,7 @@ function press(action){if(off&&action!=='on')return;if(action!=='eng'&&action!==
  if(action==='integral'){openModes({initialMode:'Cálculo',initialOperation:shifted?'Derivada':'Integral definida',expression:field.value.replaceAll(',','.'),angle,onAccept:acceptResult});return}
  if(action==='variableX'){if(shifted)openModes({initialMode:'Cálculo',initialOperation:'Somatório',expression:field.value.replaceAll(',','.'),angle,onAccept:acceptResult});else insert('x');return}
  if(shifted&&(action==='+'||action==='-')){openModes({initialMode:'Cálculo',initialOperation:action==='+'?'Pol':'Rec',angle});return}
- if(action==='menu'){if(shifted)openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll});else openModes(calcContext());return}
+ if(action==='menu'){if(shifted)openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll});else openIconMenu(calcContext());return}
  if(shifted&&(action==='7'||action==='8')){const isConstant=action==='7';openModes({...calcContext(),initialMode:isConstant?'const':'conv',value:done?ans:(field.value||ans),onAccept:(value,details)=>{if(details.kind==='constant')insertConstant(value);else acceptResult(value,details)}});return}
  if(action==='9'&&shifted){openSetup(settings,{...calcContext(),onApply:applySetup,onResetAll:resetAll});return}
  if(action==='clear'){storing=false;recalling=false;if(shifted){off=true;document.querySelector('.display').classList.add('off')}else{field.value='';setResult('0');done=false}return}
