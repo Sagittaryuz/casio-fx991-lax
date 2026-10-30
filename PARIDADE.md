@@ -21,11 +21,11 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 
 | Tecla no corpo | Principal no app | Shift no app | Alpha no app / lacuna |
 |---|---|---|---|
-| OPTN | A — informa indisponível; falta menu contextual de opções. | A — QR indisponível. | — |
-| CALC | P — CALC pede valores para variáveis em formulário, calcula e permite aplicar ou cancelar. | P — SOLVE usa estimativa inicial e exibe raiz e resíduo; Newton numérico pode não convergir ou detectar descontinuidades. | — |
+| OPTN | P — abre opções contextuais derivadas dos controles já implementados no modo; não cobre todas as opções da máquina física. Em planilha, leva ao controle de copiar, mover ou preencher sem executar a operação. | A — QR desativado; nenhum dado é transmitido. | — |
+| CALC | P — CALC pede valores para variáveis em formulário, calcula e permite aplicar ou cancelar. | P — SOLVE usa estimativa inicial e exibe raiz e resíduo; Newton numérico pode não convergir ou detectar descontinuidades. | P — insere `=` na expressão. |
 | ∫ | P — abre formulário de integral definida numérica no visor. | P — abre formulário de derivada numérica no visor; aproximações podem falhar em descontinuidades. | — |
 | x | P — insere `x`. | P — abre formulário de somatório numérico no visor. | — |
-| Fração | P — insere `()/()` com cursor inicial no numerador, apresenta fração empilhada e permite deslocar entre campos reconhecidos, inclusive aninhados, com ▲/▼; `exactResult` resolve subconjunto racional. Toque escolhe a fronteira visual mais próxima e arrasto seleciona; falta editor estrutural completo e validação em aparelho físico. | A — número misto não implementado. | — |
+| Fração | P — insere `()/()` com cursor inicial no numerador, apresenta fração empilhada e permite deslocar entre campos reconhecidos, inclusive aninhados, com ▲/▼; `exactResult` resolve subconjunto racional. Toque escolhe a fronteira visual mais próxima e arrasto seleciona; falta editor estrutural completo e validação em aparelho físico. | P — insere modelo de número misto `mix(inteiro;numerador;denominador)`; componentes devem ser inteiros não negativos e o sinal negativo é externo. | — |
 | √ | P — insere `sqrt(` e apresenta radical para entradas reconhecidas, inclusive parêntese aberto; alguns radicais quadráticos são exatos. | P — insere `cbrt(`; precisão/apresentação não equivalentes comprovadas. | — |
 | x² | P — insere `^2`. | P — insere `^3`. | — |
 | xʸ | P — insere `^`; apresentação visual em sobrescrito quando há operandos reconhecidos. Não há editor estrutural geral de expoente. | P — insere template `nthroot(índice;valor)`; domínio real verificado. | — |
@@ -41,17 +41,17 @@ Esta matriz é um inventário **verificável, não uma certificação de equival
 | ENG | P — mostra notação de engenharia e avança o expoente em múltiplos de 3. | P — desloca expoente na direção inversa. | — |
 | ( | P — abre parêntese; fecha automaticamente parênteses pendentes no cálculo. | P — insere `abs(`. | — |
 | ) | P — fecha parêntese. | — | P — `x`, variável em sessão. |
-| S⇔D | P — alterna exato/decimal somente se `exactResult` suportar expressão. | A — conversão mista/imprópria indisponível. | P — `y`, variável em sessão. |
+| S⇔D | P — alterna exato/decimal somente se `exactResult` suportar expressão. | P — alterna resultado impróprio e misto quando o resultado racional exato é suportado; não é conversão simbólica geral. | P — `y`, variável em sessão. |
 | M+ | P — soma `Ans` à variável M. | P — subtrai `Ans` de M. | P — insere `M`; conteúdo de memória não persiste ao recarregar neste checkpoint. |
 
 ## Teclas numéricas e operadoras
 
 | Tecla | Principal no app | Shift no app | Alpha no app / lacuna |
 |---|---|---|---|
-| 7 | P — dígito. | A — CONST: catálogo de constantes físicas não disponível. | — |
-| 8 | P — dígito. | A — CONV: catálogo de conversões de unidade não disponível. | — |
+| 7 | P — dígito. | P — CONST abre catálogo de 47 constantes e insere o valor após confirmação; valores CODATA 2010 e limites estão em `CATALOG.md`. | — |
+| 8 | P — dígito. | P — CONV abre 40 direções de conversão, pede confirmação para aplicar o resultado; fatores e convenções em `CATALOG.md`. | — |
 | 9 | P — dígito. | P — abre RESET/SETUP; apagar todos os dados exige confirmação explícita. | — |
-| DEL | P — apaga seleção ou caractere anterior. | P — mostra “INSERÇÃO ATIVA”; a edição sempre insere, sem alternância de modo comprovada. UNDO não existe. | — |
+| DEL | P — apaga seleção ou caractere anterior. | P — mostra “INSERÇÃO ATIVA”; a edição sempre insere, sem alternância de modo comprovada. | P — UNDO/refazer de um nível no editor principal, restaura expressão, resultado, cursor e seleção; não cobre editores dos modos. |
 | AC | P — limpa entrada e resultado. | P — OFF oculta o visor até ON; não é desligamento físico. | — |
 | 4 | P — dígito. | — | — |
 | 5 | P — dígito. | — | — |
@@ -77,7 +77,7 @@ O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navega�
 
 | Modo | O que está acessível no aplicativo | Lacunas específicas / verificação |
 |---|---|---|
-| Calcular | Aritmética, parênteses, trigonometria DEG/RAD/GRAD, logs naturais/decimais, valor absoluto, fatorial, combinatória, subconjunto de frações/radicais; formulário numérico para derivada, integral e soma. | Sem catálogos CONST/CONV, editor estrutural natural completo, número misto e simplificação simbólica geral; CALC/SOLVE e DEG/RAD/GRAD estão disponíveis por formulários, com limitações numéricas; a apresentação parcial empilha frações aninhadas reconhecidas e mostra raízes e potências com operandos reconhecidos; derivada/integral não garantem detectar singularidades ou descontinuidades. `tests/engine.test.mjs`, `tests/exact.test.mjs`, `tests/calculus.test.mjs`; exemplos guia pp. 3–5 e 29. |
+| Calcular | Aritmética, parênteses, trigonometria DEG/RAD/GRAD, logs naturais/decimais, valor absoluto, fatorial, combinatória, subconjunto de frações/radicais; formulário numérico para derivada, integral e soma. | Sem editor estrutural natural completo e simplificação simbólica geral; CONST/CONV e um subconjunto de números mistos estão disponíveis; CALC/SOLVE e DEG/RAD/GRAD estão disponíveis por formulários, com limitações numéricas; a apresentação parcial empilha frações aninhadas reconhecidas e mostra raízes e potências com operandos reconhecidos; derivada/integral não garantem detectar singularidades ou descontinuidades. `tests/engine.test.mjs`, `tests/exact.test.mjs`, `tests/calculus.test.mjs`; exemplos guia pp. 3–5 e 29. |
 | Complexos | Soma, subtração, produto, quociente e conversão retangular/polar por campos. | Não há editor complexo integrado ao visor principal nem cobertura completa de funções complexas; operações numéricas. `tests/modes.test.mjs`, guia pp. 11–12. |
 | Base-N | Binário, octal, decimal, hexadecimal; conversão, +/−/×/÷, AND/OR/XOR/XNOR/NOT por campos. | Adota inteiros de 32 bits e complemento de dois; limites e formatação da LA X não foram verificados; sem sequência fiel de teclas. `tests/modes.test.mjs`. |
 | Matriz | A+B, A−B, A×B, determinante, inversa e transposta em matrizes até 4×4 por grade. | Identidade e escala existem no módulo `linear.js`, mas não têm opção no formulário; sem registradores MatA/MatB/MatC/MatD do fluxo físico ou entrada natural. `tests/linear.test.mjs`, guia pp. 13–16. |
@@ -92,18 +92,18 @@ O guia lista os 12 modos na página 2. Todos abaixo são **parciais**: a navega�
 
 ## Evidência e limites de teste
 
-- `npm test` executa os testes Node em `tests/*.test.mjs`, incluindo `solve.test.mjs`, `scientific.test.mjs`, `settings.test.mjs` e `grad.test.mjs`; os casos específicos são identificados nas tabelas e documentos citados. Testes numéricos de módulo **não** provam que cada tecla ou cada fluxo tenha sido testado no navegador.
-- Os ensaios locais cobriram exemplos de matriz/vetor/sistema/polinômio, complexo e Base-N, estatística, tabela/planilha, persistência com falhas simuladas, e atalhos do corpo. No visor natural foram testados `7/8`, alternância decimal, mudança de numerador 7→5, `√24`, `2^3`, `(1+2/3)/4=5/12` e `√(9/4)^2=9/4`; em Chromium móvel emulado, um toque alterou o denominador e arrasto de mouse selecionou caracteres (`qa/natural-nested-browser.mjs`); não constituem uma varredura de todas as combinações Shift/Alpha. A leitura acima usa ramificações reais do código, e ausências não devem ser tratadas como testes passados.
+- `npm test` executa os testes Node em `tests/*.test.mjs`, incluindo `solve.test.mjs`, `scientific.test.mjs`, `settings.test.mjs`, `grad.test.mjs`, `catalog.test.mjs` e `mixed.test.mjs`; os casos específicos são identificados nas tabelas e documentos citados. Testes numéricos de módulo **não** provam que cada tecla ou cada fluxo tenha sido testado no navegador.
+- Os ensaios locais cobriram exemplos de matriz/vetor/sistema/polinômio, complexo e Base-N, estatística, tabela/planilha, persistência com falhas simuladas, e atalhos do corpo. No visor natural foram testados `7/8`, alternância decimal, mudança de numerador 7→5, `√24`, `2^3`, `(1+2/3)/4=5/12` e `√(9/4)^2=9/4`; em Chromium móvel emulado, um toque alterou o denominador e arrasto de mouse selecionou caracteres (`qa/natural-nested-browser.mjs`); não constituem uma varredura de todas as combinações Shift/Alpha. Testes adicionais de navegador cobriram OPTN contextual e cancelamento (`qa/optn-browser.mjs`), CONST/CONV e cancelamento (`qa/catalog-shortcuts-browser.mjs`) e números mistos, seleção e UNDO/refazer (`qa/mixed-undo-browser.mjs`). A leitura acima usa ramificações reais do código, e ausências não devem ser tratadas como testes passados.
 - Não há comparação com firmware, dispositivo físico nem suíte oficial de 552 funções. Não foi verificada fidelidade de fontes, exatidão colorimétrica, tempo de resposta, áudio, vibração ou instalação no iPhone.
 
 ## Lacunas que impedem declarar o pedido integralmente atendido
 
 O pedido inclui as funcionalidades da fx‑991LA X; por isso, os itens abaixo impedem declarar paridade funcional completa, mesmo que exista um caminho alternativo no aplicativo:
 
-1. OPTN e QR permanecem indisponíveis; QR não transmite dados. Catálogos CONST e CONV e parte dos ajustes SETUP permanecem ausentes. CALC, SOLVE, integral, derivada, somatório e RESET são acessíveis pelas teclas usando formulários no visor; o fluxo não reproduz a máquina física.
-2. DMS, FACT, ENG, logaritmo de base e raiz de índice, Pol/Rec e Rnd agora têm caminhos pelas teclas, mas carecem de comparação abrangente de limites e apresentação. Número misto e UNDO permanecem ausentes.
-3. Representações matemáticas e edição estruturada completas, incluindo todos os formatos exatos, frações mistas, estruturas aninhadas arbitrárias, posição/seleção por toque idênticas e histórico de navegação. O posicionamento usa fronteiras visuais e foi exercitado em emulação, não comprovado em iPhone físico. A apresentação e os resultados exatos cobrem subconjuntos documentados, e não foram comparados exaustivamente ao aparelho.
-4. Os modos avançados não reproduzem integralmente o menu de ícones, sequência de teclas, registradores Mat/Vct, opções contextuais, limites e formatos da LA X. A análise por formulário e testes numéricos comprovam apenas as operações nomeadas na tabela, não todas as funções dos modos físicos.
+1. OPTN contextual lista as operações e controles já implementados, sem reproduzir todas as opções físicas; QR permanece desativado e não transmite dados. CONST e CONV oferecem, respectivamente, 47 constantes CODATA 2010 e 40 direções, com confirmação; fatores e convenções constam de `CATALOG.md` e não foram confrontados dígito a dígito com o firmware. Parte dos ajustes SETUP permanece ausente. CALC, SOLVE, integral, derivada, somatório e RESET usam formulários no visor, com fluxo diferente do aparelho.
+2. DMS, FACT, ENG, logaritmo de base e raiz de índice, Pol/Rec e Rnd têm caminhos pelas teclas, mas carecem de comparação abrangente de limites e apresentação. Números mistos cobrem componentes inteiros não negativos com sinal externo; UNDO/refazer tem um nível e só opera no editor principal.
+3. Representações matemáticas e edição estruturada completas, incluindo todos os formatos exatos, todos os contextos de frações mistas, estruturas aninhadas arbitrárias, posição/seleção por toque idênticas e histórico de navegação. O posicionamento usa fronteiras visuais e foi exercitado em emulação, não comprovado em iPhone físico. A apresentação e os resultados exatos cobrem subconjuntos documentados, e não foram comparados exaustivamente ao aparelho.
+4. Os modos avançados não reproduzem integralmente o menu de ícones, sequência de teclas, registradores Mat/Vct, todas as opções contextuais, limites e formatos da LA X. A análise por formulário e testes numéricos comprovam apenas as operações nomeadas na tabela, não todas as funções dos modos físicos.
 5. Os limites numéricos e comportamento em casos mal condicionados, singularidades, arredondamento, overflow, memória e erros não têm comparação completa com o aparelho. A memória das variáveis e o conjunto estatístico não persistem entre recargas; a planilha depende do armazenamento do navegador.
 
 As lacunas funcionais são trabalho de implementação e validação pendente; não há base para classificá-las como impossíveis apenas por não usar firmware proprietário. Também não há teste em iPhone físico nem comparação integral com uma unidade LA X. Esses limites visuais e de validação impedem afirmar réplica fiel, mesmo onde há resultados numéricos testados.

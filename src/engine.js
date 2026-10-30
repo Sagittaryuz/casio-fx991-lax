@@ -10,7 +10,7 @@ export function evaluate(expression, options = {}) {
     const n = rest.match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
     if (n) { tokens.push({type:'number', value:Number(n[0])}); i += n[0].length; continue; }
     const w = rest.match(/^[a-zA-Z]+/);
-    if (w) { const word=w[0]; const named=/^(?:sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|asinh|acosh|atanh|sqrt|cbrt|log|ln|abs|exp|pow|logbase|nthroot|npr|ncr|pi|ans)$/i.test(word); if(!named && word.length>1 && /^[A-FxyMe]+$/.test(word)){for(const c of word) tokens.push({type:'word',value:c});}else tokens.push({type:'word',value:word}); i += word.length; continue; }
+    if (w) { const word=w[0]; const named=/^(?:sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|asinh|acosh|atanh|sqrt|cbrt|log|ln|abs|exp|pow|logbase|nthroot|npr|ncr|mix|pi|ans)$/i.test(word); if(!named && word.length>1 && /^[A-FxyMe]+$/.test(word)){for(const c of word) tokens.push({type:'word',value:c});}else tokens.push({type:'word',value:word}); i += word.length; continue; }
     if ('+-*/^()!%,'.includes(source[i])) { tokens.push({type:source[i++]}); continue; }
     throw Error('Syntax ERROR');
   }
@@ -35,6 +35,7 @@ export function evaluate(expression, options = {}) {
     sqrt:Math.sqrt, cbrt:Math.cbrt, log:Math.log10, ln:Math.log, abs:Math.abs,
     exp:Math.exp, pow10:n=>10**n,
     logbase:logBase, nthroot:nthRoot,
+    mix:(w,n,d)=>{if(![w,n,d].every(Number.isSafeInteger)||w<0||n<0||d<=0)throw Error("Math ERROR");return checked(w+n/d);},
     npr:(n,r)=>{integerPair(n,r);let v=1;for(let i=0;i<r;i++)v*=n-i;return v;},
     ncr:(n,r)=>{integerPair(n,r);r=Math.min(r,n-r);let v=1;for(let i=1;i<=r;i++)v=v*(n-r+i)/i;return Math.round(v);}
   };
@@ -50,7 +51,7 @@ export function evaluate(expression, options = {}) {
       if (Object.hasOwn(variables,rawName)) value=variables[rawName];
       else if (Object.hasOwn(funcs,name)) {
         take('('); const args=[sum()]; while(peek().type===',') {take(',');args.push(sum());} take(')');
-        const arity = ['logbase','nthroot','npr','ncr'].includes(name) ? 2 : 1;
+        const arity = name==='mix'?3:['logbase','nthroot','npr','ncr'].includes(name) ? 2 : 1;
         if(args.length!==arity) throw Error('Syntax ERROR');
         value=funcs[name](...args);
       }

@@ -1,4 +1,4 @@
-const CACHE='fx991lax-v5';
+const CACHE='fx991lax-v6';
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);const response=await fetch('/',{cache:'no-store'});if(!response.ok)throw Error('Falha ao carregar aplicativo');const html=await response.clone().text();const urls=[...html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g)].map(m=>m[1]);await cache.put('/',response);await cache.addAll([...urls,'/face-texture.webp','/manifest.webmanifest']);})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('fx991lax-')&&key!==CACHE)await caches.delete(key)})()));
 self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;event.respondWith((async()=>{try{const response=await fetch(event.request);return response}catch{return (await caches.match(event.request))||(event.request.mode==='navigate'?await caches.match('/'):Response.error())}})())});
