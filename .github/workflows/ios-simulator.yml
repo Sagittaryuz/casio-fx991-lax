@@ -15,7 +15,8 @@ jobs:
       - name: Verify bundled engine
         run: |
           node ios/scripts/build-engine.mjs
-          git diff --exit-code -- ios/Resources/engine.bundle.js
+          node ios/scripts/build-hp-digits.mjs
+          git diff --exit-code -- ios/Resources/engine.bundle.js ios/FX991/HPDigits.swift
           node --test ios/tests/*.test.mjs
       - name: Build iOS simulator (no signing)
         run: xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
@@ -28,6 +29,13 @@ jobs:
           APP=$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/Build/Products/Debug-iphonesimulator/FX991.app' -type d -print -quit)
           test -n "$APP"
           xcrun simctl install "$DEVICE" "$APP"
+          xcrun simctl launch "$DEVICE" dev.sagittaryuz.fx991lax --native-selftest
+          CONTAINER=$(xcrun simctl get_app_container "$DEVICE" dev.sagittaryuz.fx991lax data)
+          for attempt in {1..60}; do test -f "$CONTAINER/Documents/native-selftest.json" && break; sleep 1; done
+          test -f "$CONTAINER/Documents/native-selftest.json"
+          cat "$CONTAINER/Documents/native-selftest.json"
+          python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["passed"] else 1)' "$CONTAINER/Documents/native-selftest.json"
+          xcrun simctl terminate "$DEVICE" dev.sagittaryuz.fx991lax
           xcrun simctl launch "$DEVICE" dev.sagittaryuz.fx991lax
           xcrun simctl io "$DEVICE" screenshot /tmp/fx991-ios.png
       - name: Save simulator screenshot

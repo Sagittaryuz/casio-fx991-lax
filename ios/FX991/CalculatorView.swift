@@ -58,17 +58,39 @@ struct CalculatorView: View {
                     photo("lcd-surface").resizable()
                     if model.setupVisible { setup }
                     else if model.menuVisible { menu }
+                    else if model.advancedMode != nil { advanced }
                     else {
                         VStack(alignment:.leading, spacing: 0) {
                             HStack { Text(model.angle == "DEG" ? "D" : model.angle == "RAD" ? "R" : "G"); Text(model.shifted ? "S" : model.alpha ? "A" : ""); Spacer(); Text(model.status).lineLimit(1) }.font(.system(size: 8, weight:.bold, design:.monospaced))
-                            ScrollView(.horizontal, showsIndicators:false) { Text(model.expression.isEmpty ? " " : model.expression).font(.system(size: 25, design: .monospaced)).lineLimit(1) }
+                            ScrollView(.horizontal, showsIndicators:false) { DigitLine(text:model.expression,size:24,cursor:model.cursor).fixedSize() }
                             Spacer(minLength: 0)
-                            HStack { Spacer(minLength:0); Text(model.result).font(.system(size: 36, weight:.medium, design:.monospaced)).minimumScaleFactor(0.35).lineLimit(1).accessibilityIdentifier("result") }
+                            HStack { Spacer(minLength:0); DigitLine(text:model.result,size:min(36,proxy.size.width * 0.72 / CGFloat(max(1,model.result.count)) / 0.65)).accessibilityIdentifier("result") }
                         }.padding(5).foregroundStyle(Color(red:0.05,green:0.1,blue:0.08))
                     }
                 }.frame(width:proxy.size.width*0.87,height:proxy.size.height*0.67)
             }
         }.accessibilityElement(children: .contain)
+    }
+    private var advanced: some View {
+        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular"]
+        return VStack(alignment:.leading,spacing:2) {
+            Text(captions[model.advancedMode ?? ""] ?? "Modo").font(.system(size:10,weight:.bold)).lineLimit(1)
+            ScrollViewReader { reader in
+                ScrollView(.vertical,showsIndicators:false) {
+                    VStack(alignment:.leading,spacing:1) {
+                        ForEach(model.advancedFields.indices,id: \.self) { i in
+                            Button { model.selectAdvancedField(i) } label: {
+                                HStack(spacing:3) { Text(model.advancedLabels[i] + ":"); Text(model.advancedFields[i].isEmpty ? "□" : model.advancedFields[i]).lineLimit(1); Spacer(minLength:0) }
+                                    .font(.system(size:12,weight:.medium,design:.monospaced)).padding(.horizontal,2)
+                                    .foregroundStyle(i == model.advancedIndex ? Color.white : Color.black)
+                                    .background(i == model.advancedIndex ? Color.black : Color.clear)
+                            }.buttonStyle(.plain).id(i)
+                        }
+                    }
+                }.onChange(of:model.advancedIndex) { index in reader.scrollTo(index,anchor:.center) }
+            }
+            if !model.advancedResult.isEmpty { ScrollView(.horizontal,showsIndicators:false) { Text(model.advancedResult).font(.system(size:12,weight:.bold,design:.monospaced)).lineLimit(1).accessibilityIdentifier("advanced-result") } }
+        }.padding(3).foregroundStyle(.black).accessibilityIdentifier("advanced-mode")
     }
     private var setup: some View {
         HStack { ForEach(["DEG", "RAD", "GRAD"], id: \.self) { unit in

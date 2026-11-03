@@ -13,6 +13,8 @@
   A00000000000000000000007 = {isa = PBXBuildFile; fileRef = B00000000000000000000007; };
   A00000000000000000000008 = {isa = PBXBuildFile; fileRef = B00000000000000000000008; };
   A00000000000000000000009 = {isa = PBXBuildFile; fileRef = B00000000000000000000009; };
+  A00000000000000000000011 = {isa = PBXBuildFile; fileRef = B00000000000000000000011; };
+  A00000000000000000000012 = {isa = PBXBuildFile; fileRef = B00000000000000000000012; };
   B00000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FX991App.swift; sourceTree = "<group>"; };
   B00000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorModel.swift; sourceTree = "<group>"; };
   B00000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorView.swift; sourceTree = "<group>"; };
@@ -22,12 +24,14 @@
   B00000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = image.webp; path = round.webp; sourceTree = "<group>"; };
   B00000000000000000000008 = {isa = PBXFileReference; lastKnownFileType = image.webp; path = "direction-photo.webp"; sourceTree = "<group>"; };
   B00000000000000000000009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = engine.bundle.js; sourceTree = "<group>"; };
+  B00000000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HPDigits.swift; sourceTree = "<group>"; };
+  B00000000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSelfTest.swift; sourceTree = "<group>"; };
   B00000000000000000000010 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FX991.app; sourceTree = BUILT_PRODUCTS_DIR; };
   C00000000000000000000001 = {isa = PBXGroup; children = (C00000000000000000000002,C00000000000000000000003,C00000000000000000000004,); sourceTree = "<group>"; };
-  C00000000000000000000002 = {isa = PBXGroup; path = FX991; children = (B00000000000000000000001,B00000000000000000000002,B00000000000000000000003,); sourceTree = "<group>"; };
+  C00000000000000000000002 = {isa = PBXGroup; path = FX991; children = (B00000000000000000000001,B00000000000000000000002,B00000000000000000000003,B00000000000000000000011,B00000000000000000000012,); sourceTree = "<group>"; };
   C00000000000000000000003 = {isa = PBXGroup; path = Resources; children = (B00000000000000000000004,B00000000000000000000005,B00000000000000000000006,B00000000000000000000007,B00000000000000000000008,B00000000000000000000009,); sourceTree = "<group>"; };
   C00000000000000000000004 = {isa = PBXGroup; name = Products; children = (B00000000000000000000010,); sourceTree = "<group>"; };
-  D00000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001,A00000000000000000000002,A00000000000000000000003,); runOnlyForDeploymentPostprocessing = 0; };
+  D00000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000001,A00000000000000000000002,A00000000000000000000003,A00000000000000000000011,A00000000000000000000012,); runOnlyForDeploymentPostprocessing = 0; };
   D00000000000000000000002 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000004,A00000000000000000000005,A00000000000000000000006,A00000000000000000000007,A00000000000000000000008,A00000000000000000000009,); runOnlyForDeploymentPostprocessing = 0; };
   D00000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
   E00000000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = F00000000000000000000002; buildPhases = (D00000000000000000000001,D00000000000000000000003,D00000000000000000000002,); buildRules = (); dependencies = (); name = FX991; productName = FX991; productReference = B00000000000000000000010; productType = "com.apple.product-type.application"; };

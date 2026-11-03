@@ -10,10 +10,24 @@ private struct EngineReply: Decodable {
 }
 
 /// A serial queue owns the JS context, keeping expensive calculations off the UI thread.
+private struct AdvancedReply: Decodable {
+    let ok: Bool
+    let result: String?
+    let display: String?
+    let snapshot: String?
+    let error: String?
+}
+
 private enum Engine {
     static let queue = DispatchQueue(label: "fx991.engine", qos: .userInitiated)
     static var context: JSContext?
     static func calculate(_ payload: [String: Any], completion: @escaping (Result<EngineReply, Error>) -> Void) {
+        run("nativeCalculate", payload: payload, completion: completion)
+    }
+    static func advanced(_ payload: [String: Any], completion: @escaping (Result<AdvancedReply, Error>) -> Void) {
+        run("nativeAdvanced", payload: payload, completion: completion)
+    }
+    private static func run<T: Decodable>(_ function: String, payload: [String: Any], completion: @escaping (Result<T, Error>) -> Void) {
         queue.async {
             do {
                 if context == nil {
@@ -24,10 +38,10 @@ private enum Engine {
                     if let error = js.exception { throw NSError(domain: "Engine", code: 2, userInfo: [NSLocalizedDescriptionKey: error.toString()]) }
                     context = js
                 }
-                guard let js = context, let fn = js.objectForKeyedSubscript("nativeCalculate"),
+                guard let js = context, let fn = js.objectForKeyedSubscript(function),
                       let text = fn.call(withArguments: [payload])?.toString(),
                       let data = text.data(using: .utf8) else { throw NSError(domain: "Engine", code: 3) }
-                let answer = try JSONDecoder().decode(EngineReply.self, from: data)
+                let answer = try JSONDecoder().decode(T.self, from: data)
                 DispatchQueue.main.async { completion(.success(answer)) }
             } catch {
                 DispatchQueue.main.async { completion(.failure(error)) }
@@ -46,6 +60,14 @@ private enum Engine {
     @Published var menuVisible = false
     @Published var setupVisible = false
     @Published var menuIndex = 0
+    @Published var advancedMode: String? = nil
+    @Published var advancedFields: [String] = []
+    @Published var advancedLabels: [String] = []
+    @Published var advancedIndex = 0
+    @Published var advancedResult = ""
+    private let sheetKey = "fx991lax.ios.sheet.v1"
+    private let angleKey = "fx991lax.ios.angle.v1"
+    private var sheetSnapshot: String? = UserDefaults.standard.string(forKey: "fx991lax.ios.sheet.v1")
     @Published var status = "CALCULAR"
     @Published var calculating = false
     private var ans = 0.0
@@ -60,6 +82,10 @@ private enum Engine {
     private var generation = 0
     private let variableKeys: [String: String] = ["negative":"A", "dms":"B", "inverse":"C", "sin":"D", "cos":"E", "tan":"F", ")":"x", "toggle":"y", "memory":"M"]
 
+    init() {
+        let saved = UserDefaults.standard.string(forKey: angleKey) ?? "DEG"
+        if ["DEG", "RAD", "GRAD"].contains(saved) { angle = saved }
+    }
     func press(_ action: String) {
         if action == "on" { reset(); return }
         if calculating { generation += 1; calculating = false }
@@ -85,6 +111,10 @@ private enum Engine {
             else if alt, let index = ["negative":9,"dms":10,"inverse":11][action] { selectMode(Self.modes[index]) }
             return
         }
+        if advancedMode != nil {
+            pressAdvanced(action, shifted: shift, alpha: alt)
+            return
+        }
         if (alt || storePending || recallPending), let name = variableKeys[action] {
             if storePending { variables[name] = ans; if name == "M" { memory = ans }; storePending = false; status = "STO \(name)" }
             else if recallPending { insert(String(variables[name] ?? 0)); recallPending = false; status = "CALCULAR" }
@@ -108,20 +138,84 @@ private enum Engine {
         case "sin", "cos", "tan": insert((shift ? "a" : "") + action + "(")
         case "log", "ln": insert(shift ? (action == "log" ? "10^" : "e^") : action + "(")
         case "exp": insert(shift ? "pi" : "*10^")
-        case "variableX": insert("x")
+        case "variableX": if shift { openAdvanced("Somatório") } else { insert("x") }
         case "toggle": if let exact = lastExact { showExact.toggle(); result = showExact ? exact : lastDecimal }
         case "angle": angle = angle == "DEG" ? "RAD" : angle == "RAD" ? "GRAD" : "DEG"
         case "left": cursor = max(0, cursor - 1)
         case "right": cursor = min(expression.count, cursor + 1)
-        case "up", "down", "optn", "calc", "integral", "dms", "eng": status = "AINDA NÃO DISPONÍVEL"
+        case "integral": openAdvanced(shift ? "Derivada" : "Integral")
+        case "calc": openAdvanced(shift ? "SOLVE" : "CALC")
+        case "+": if shift { openAdvanced("Pol") } else { insert("+") }
+        case "-": if shift { openAdvanced("Rec") } else { insert("-") }
+        case "up", "down", "optn", "dms", "eng": status = "AINDA NÃO DISPONÍVEL"
         default: insert(action)
         }
     }
     static let modes = ["Calcular", "Complexos", "Base-N", "Matriz", "Vetor", "Estatística", "Distribuição", "Planilha", "Tabela", "Equação", "Desigualdade", "Proporção"]
-    func setAngle(_ value: String) { angle = value; setupVisible = false; status = "CALCULAR" }
+    func setAngle(_ value: String) { angle = value; UserDefaults.standard.set(value, forKey: angleKey); setupVisible = false; status = "CALCULAR" }
     func selectMode(_ name: String) {
         menuVisible = false
-        status = name == "Calcular" ? "CALCULAR" : "\(name.uppercased()): EM DESENVOLVIMENTO"
+        if name == "Calcular" { advancedMode = nil; status = "CALCULAR" }
+        else { openAdvanced(name) }
+    }
+    private func openAdvanced(_ name: String) {
+        let labels: [String: [String]] = [
+            "Complexos": ["z₁", "z₂"], "Base-N": ["Valor", "Base origem", "Base destino"],
+            "Matriz": ["a₁₁", "a₁₂", "a₂₁", "a₂₂"], "Vetor": ["A₁", "A₂", "A₃", "B₁", "B₂", "B₃"],
+            "Estatística": ["x₁", "x₂", "x₃"], "Distribuição": ["x", "μ", "σ"],
+            "Planilha": ["Célula", "Conteúdo"], "Tabela": ["f(x)", "Início", "Fim", "Passo"],
+            "Equação": ["a", "b", "c"], "Desigualdade": ["a", "b", "c"],
+            "Proporção": ["a", "b", "c"], "Integral": ["f(x)", "Inferior", "Superior"],
+            "Derivada": ["f(x)", "x"], "Somatório": ["f(x)", "Início", "Fim"],
+            "CALC": ["f(x,A,B)", "x", "A", "B"], "SOLVE": ["f(x)=0", "Inicial", "A", "B"],
+            "Pol": ["x", "y"], "Rec": ["r", "θ"]
+        ]
+        guard let names = labels[name] else { status = "AINDA NÃO DISPONÍVEL"; return }
+        advancedMode = name; advancedLabels = names
+        advancedFields = Array(repeating: "", count: names.count)
+        if name == "Planilha" { advancedFields[0] = "A1"; advancedIndex = 1 }
+        else if name == "CALC" || name == "SOLVE" { advancedFields[0] = expression; advancedFields[1] = "0"; advancedFields[2] = "0"; advancedFields[3] = "0"; advancedIndex = 0 }
+        else { advancedIndex = 0 }
+        advancedResult = ""; status = "CALCULAR"
+    }
+    func selectAdvancedField(_ index: Int) {
+        guard advancedFields.indices.contains(index) else { return }
+        advancedIndex = index
+    }
+    private func pressAdvanced(_ action: String, shifted: Bool, alpha: Bool) {
+        guard let kind = advancedMode, advancedFields.indices.contains(advancedIndex) else { return }
+        if action == "menu" { advancedMode = nil; menuIndex = 0; menuVisible = true; return }
+        if action == "up" || action == "left" { advancedIndex = max(0, advancedIndex - 1); return }
+        if action == "down" || action == "right" { advancedIndex = min(advancedFields.count - 1, advancedIndex + 1); return }
+        if action == "equals" { runAdvanced(kind); return }
+        if action == "clear" { advancedFields[advancedIndex] = ""; advancedResult = ""; return }
+        if action == "del" { if !advancedFields[advancedIndex].isEmpty { advancedFields[advancedIndex].removeLast() }; return }
+        let alphaNames = ["negative":"A", "dms":"B", "inverse":"C", "sin":"D", "cos":"E", "tan":"F", "eng":"i", ")":"x"]
+        let aliases = ["negative":"-", "variableX":"x", "fraction":"/", "power":"^", "square":"^2", "sin":"sin(", "cos":"cos(", "tan":"tan(", "sqrt":"sqrt(", "log":"log(", "ln":"ln("]
+        let text: String
+        if alpha, let value = alphaNames[action] { text = value }
+        else if alpha && action == "calc" { text = "=" }
+        else if let value = aliases[action] { text = value }
+        else if action.count == 1 && "0123456789,+-*/()".contains(action) { text = action }
+        else { status = "TECLA NÃO DISPONÍVEL"; return }
+        advancedFields[advancedIndex] += text
+    }
+    private func runAdvanced(_ kind: String) {
+        generation += 1; let ticket = generation
+        calculating = true; advancedResult = "CALCULANDO"
+        var payload: [String: Any] = ["kind": kind, "fields": advancedFields, "angle": angle]
+        if let snapshot = sheetSnapshot { payload["snapshot"] = snapshot }
+        Engine.advanced(payload) { [weak self] outcome in
+            guard let self = self, self.generation == ticket, self.advancedMode == kind else { return }
+            self.calculating = false
+            switch outcome {
+            case .success(let value) where value.ok:
+                self.advancedResult = value.display ?? value.result ?? ""
+                if let snapshot = value.snapshot { self.sheetSnapshot = snapshot; UserDefaults.standard.set(snapshot, forKey:self.sheetKey) }
+            case .success(let value): self.advancedResult = value.error ?? "Erro"
+            case .failure: self.advancedResult = "Erro do motor"
+            }
+        }
     }
     private func insert(_ text: String) {
         if completed { expression = ["+", "-", "*", "/", "^"].contains(text) ? "Ans" : ""; cursor = expression.count; completed = false }
@@ -155,5 +249,7 @@ private enum Engine {
         ans = 0; memory = 0; for name in variables.keys { variables[name] = 0 }
         storePending = false; recallPending = false; completed = false; lastExact = nil; lastDecimal = "0"
         showExact = false; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
+        advancedMode = nil; advancedFields = []; advancedLabels = []; advancedIndex = 0; advancedResult = ""
+        sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey)
     }
 }
