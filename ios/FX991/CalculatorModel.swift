@@ -237,7 +237,7 @@ private enum Engine {
         case "memory": memory += shift ? -ans : ans; variables["M"] = memory; status = "M = \(memory)"
         case "ans": insert(shift ? "%" : "Ans")
         case "fraction": if shift { insert("mix(;;)"); cursor = max(0,cursor-3) } else { insert("()/()"); cursor = max(0, cursor - 4) }
-        case "sqrt": insert(shift ? "cbrt(" : "sqrt(")
+        case "sqrt": insert(shift ? "cbrt()" : "sqrt()"); cursor = max(0,cursor - 1)
         case "square": insert(shift ? "^3" : "^2")
         case "power": if shift { insert("nthroot(;)"); cursor = max(0,cursor-2) } else { insert("^") }
         case "inverse": insert(shift ? "!" : "^(-1)")
@@ -247,7 +247,11 @@ private enum Engine {
         case "exp": insert(shift ? "pi" : "*10^")
         case "variableX": if shift { openAdvanced("Somatório") } else { insert("x") }
         case "toggle": if let exact = lastExact { showExact.toggle(); result = showExact ? exact : lastDecimal }
-        case "angle": angle = angle == "DEG" ? "RAD" : angle == "RAD" ? "GRAD" : "DEG"
+        case "angle": setAngle(angle == "DEG" ? "RAD" : angle == "RAD" ? "GRAD" : "DEG")
+        case ")":
+            let chars = Array(expression)
+            if cursor < chars.count && chars[cursor] == ")" { cursor += 1 }
+            else { insert(")") }
         case "left": cursor = max(0, cursor - 1)
         case "right": cursor = min(expression.count, cursor + 1)
         case "integral": openAdvanced(shift ? "Derivada" : "Integral")

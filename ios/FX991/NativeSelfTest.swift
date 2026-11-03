@@ -95,6 +95,17 @@ import Foundation
         calculator.press("equals")
         if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")
+        for key in ["sqrt", "sqrt", "8", "1", ")", ")", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "3" { failures.append("Nested square root failed: \(calculator.result)") }
+        calculator.press("on")
+        for key in ["shift", "sqrt", "2", "7", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "3" { failures.append("Cube root failed: \(calculator.result)") }
+        calculator.press("on")
+        calculator.press("angle")
+        if UserDefaults.standard.string(forKey:"fx991lax.ios.angle.v1") != "RAD" { failures.append("Angle button did not persist") }
+        calculator.press("on")
         for key in ["shift", "fraction", "1", "down", "1", "down", "2", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.result != "3/2" { failures.append("Mixed number navigation failed: \(calculator.result)") }

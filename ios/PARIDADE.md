@@ -26,3 +26,5 @@ O visor estrutura frações e números mistos, raízes quadradas/cúbicas/de ín
 Na grade da planilha, OPTN abre Copiar ou Preencher; a origem é a célula selecionada e o destino deve ser informado. Preencher exige destino abaixo e à direita da origem; fórmulas preservam referências absolutas e ajustam as relativas. MENU cancela e retorna à grade. Erros não salvam uma alteração parcial.
 
 Setas cima/baixo também navegam pelos campos de número misto, raiz de índice e logaritmo com base. Expressões arbitrárias e todas as regras do editor físico continuam pendentes.
+
+A tecla de raiz cria o par de parênteses para entrada imediata, inclusive raízes aninhadas; a tecla de fechar avança sobre um fechamento já presente. A alternância de unidade angular persiste como a alteração pelo SETUP.
