@@ -88,6 +88,11 @@ private enum Engine {
     @Published var advancedResult = ""
     @Published var advancedNumeric: Double? = nil
     @Published var advancedOperation = ""
+    @Published var mainOptionsOpen = false
+    @Published var sheetGrid = false
+    @Published var sheetColumn = 0
+    @Published var sheetRow = 1
+    @Published var sheetCells: [String:String] = [:]
     @Published var operationsOpen = false
     @Published var operationIndex = 0
     static let operations: [String: [String]] = [
@@ -134,6 +139,7 @@ private enum Engine {
         if let url = Bundle.main.url(forResource:"catalog",withExtension:"json"), let data = try? Data(contentsOf:url) {
             catalog = try? JSONDecoder().decode(NativeCatalog.self,from:data)
         }
+        if let raw = sheetSnapshot, let data = raw.data(using:.utf8), let object = try? JSONSerialization.jsonObject(with:data) as? [String:Any], let cells = object["cells"] as? [String:String] { sheetCells = cells }
         let saved = UserDefaults.standard.string(forKey: angleKey) ?? "DEG"
         if ["DEG", "RAD", "GRAD"].contains(saved) { angle = saved }
         let format = UserDefaults.standard.string(forKey:formatKey) ?? "NORM"
@@ -147,6 +153,11 @@ private enum Engine {
         if action == "alpha" { alpha.toggle(); shifted = false; return }
         let shift = shifted, alt = alpha
         shifted = false; alpha = false
+        if mainOptionsOpen {
+            if action == "clear" || action == "menu" || action == "left" { mainOptionsOpen = false }
+            else if action == "1" || action == "equals" { mainOptionsOpen = false; openAdvanced("Δ%") }
+            return
+        }
         if setupVisible {
             if action == "clear" || action == "menu" { setupVisible = false }
             else if action == "left" { if setupPage == "root" { setupVisible = false } else { setupPage = "root" } }
@@ -219,7 +230,7 @@ private enum Engine {
         case "dms": openAdvanced(shift ? "FATOR" : "DMS")
         case "eng": openAdvanced("ENG"); if shift { advancedFields[1] = "-1" }
         case "up", "down": moveFraction(direction: action)
-        case "optn": status = "AINDA NÃO DISPONÍVEL"
+        case "optn": mainOptionsOpen = true
         default: insert(action)
         }
     }
@@ -275,7 +286,7 @@ private enum Engine {
             "Derivada": ["f(x)", "x"], "Somatório": ["f(x)", "Início", "Fim"],
             "CALC": ["f(x,A,B)", "x", "A", "B"], "SOLVE": ["f(x)=0", "Inicial", "A", "B"],
             "Pol": ["x", "y"], "Rec": ["r", "θ"],
-            "DMS": ["Decimal"], "FATOR": ["Inteiro"], "ENG": ["Valor", "Deslocamento"], "CONV": ["Valor"]
+            "Δ%": ["Valor inicial", "Valor final"], "DMS": ["Decimal"], "FATOR": ["Inteiro"], "ENG": ["Valor", "Deslocamento"], "CONV": ["Valor"]
         ]
         guard var names = labels[name] else { status = "AINDA NÃO DISPONÍVEL"; return }
         let selected = operation ?? draft?.operation ?? Self.operations[name]?.first ?? ""
@@ -303,6 +314,7 @@ private enum Engine {
             let dimension = selected.contains("3×3") ? 3 : selected.contains("4×4") ? 4 : 2
             names = (0..<(dimension * (dimension + 1))).map { i in i % (dimension + 1) == dimension ? "b\(i / (dimension + 1) + 1)" : "a\(i / (dimension + 1) + 1)\(i % (dimension + 1) + 1)" }
         }
+        if name == "Planilha" { sheetGrid = true }
         advancedMode = name; advancedOperation = selected; operationsOpen = false; operationIndex = 0; advancedLabels = names
         advancedFields = Array(repeating: "", count: names.count)
         if name == "Planilha" { advancedFields[0] = "A1"; advancedIndex = 1 }
@@ -336,6 +348,15 @@ private enum Engine {
         advancedIndex = index; advancedCursor = advancedFields[index].count
     }
     private func pressAdvanced(_ action: String, shifted: Bool, alpha: Bool) {
+        if advancedMode == "Planilha" && sheetGrid {
+            if action == "menu" { advancedMode = nil; menuIndex = 0; menuVisible = true }
+            else if action == "left" { sheetColumn = max(0,sheetColumn - 1) }
+            else if action == "right" { sheetColumn = min(4,sheetColumn + 1) }
+            else if action == "up" { sheetRow = max(1,sheetRow - 1) }
+            else if action == "down" { sheetRow = min(45,sheetRow + 1) }
+            else if action == "equals" { editSheetCell(column:sheetColumn,row:sheetRow) }
+            return
+        }
         guard let kind = advancedMode, advancedFields.indices.contains(advancedIndex) else { return }
         let options = Self.operations[kind] ?? []
         if operationsOpen {
@@ -345,6 +366,7 @@ private enum Engine {
             if action == "equals", options.indices.contains(operationIndex) { openAdvanced(kind,operation:options[operationIndex]); return }
             return
         }
+        if kind == "Planilha" && action == "clear" && advancedFields[1].isEmpty { sheetGrid = true; return }
         if action == "optn" {
             if options.isEmpty { status = "SEM OPÇÕES ADICIONAIS" }
             else { operationIndex = options.firstIndex(of:advancedOperation) ?? 0; operationsOpen = true }
@@ -403,11 +425,22 @@ private enum Engine {
             case .success(let value) where value.ok:
                 self.advancedResult = value.display ?? value.result ?? ""
                 if let raw = value.result, let number = Double(raw), number.isFinite { self.advancedNumeric = number }
-                if let snapshot = value.snapshot { self.sheetSnapshot = snapshot; UserDefaults.standard.set(snapshot, forKey:self.sheetKey) }
+                if let snapshot = value.snapshot {
+                    self.sheetSnapshot = snapshot; UserDefaults.standard.set(snapshot, forKey:self.sheetKey)
+                    if let data = snapshot.data(using:.utf8), let object = try? JSONSerialization.jsonObject(with:data) as? [String:Any], let cells = object["cells"] as? [String:String] { self.sheetCells = cells }
+                    if kind == "Planilha" { self.sheetGrid = true }
+                }
             case .success(let value): self.advancedResult = value.error ?? "Erro"
             case .failure: self.advancedResult = "Erro do motor"
             }
         }
+    }
+    func editSheetCell(column: Int, row: Int) {
+        guard (0...4).contains(column), (1...45).contains(row), advancedMode == "Planilha" else { return }
+        sheetColumn = column; sheetRow = row
+        let address = String(UnicodeScalar(65 + column)!) + String(row)
+        advancedFields = [address, sheetCells[address] ?? ""]
+        advancedIndex = 1; advancedCursor = advancedFields[1].count; advancedResult = ""; advancedNumeric = nil; sheetGrid = false
     }
     private func moveFraction(direction: String) {
         let chars = Array(expression), length = chars.count
@@ -457,6 +490,7 @@ private enum Engine {
         storePending = false; recallPending = false; completed = false; lastExact = nil; lastDecimal = "0"
         showExact = false; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
         advancedMode = nil; advancedFields = []; advancedLabels = []; advancedIndex = 0; advancedCursor = 0; advancedResult = ""; advancedNumeric = nil; advancedOperation = ""; operationsOpen = false; operationIndex = 0
+        mainOptionsOpen = false; sheetGrid = false; sheetColumn = 0; sheetRow = 1; sheetCells = [:]
         modeDrafts.removeAll(); catalogKind = nil; catalogItems = []; catalogIndex = 0; sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey); UserDefaults.standard.removeObject(forKey:formatKey); UserDefaults.standard.removeObject(forKey:digitsKey)
     }
 }

@@ -56,9 +56,11 @@ struct CalculatorView: View {
                 photo("bezel-photo").resizable()
                 ZStack(alignment: .topLeading) {
                     photo("lcd-surface").resizable()
-                    if model.setupVisible { setup }
+                    if model.mainOptionsOpen { mainOptions }
+                    else if model.setupVisible { setup }
                     else if model.catalogKind != nil { catalog }
                     else if model.menuVisible { menu }
+                    else if model.advancedMode == "Planilha" && model.sheetGrid { sheetGrid }
                     else if model.advancedMode != nil { advanced }
                     else {
                         VStack(alignment:.leading, spacing: 0) {
@@ -71,6 +73,37 @@ struct CalculatorView: View {
                 }.frame(width:proxy.size.width*0.87,height:proxy.size.height*0.67)
             }
         }.accessibilityElement(children: .contain)
+    }
+    private var mainOptions: some View {
+        VStack(alignment:.leading) {
+            Text("OPTN").font(.system(size:10,weight:.bold))
+            Button("1: Δ% (variação percentual)") { model.press("1") }
+                .font(.system(size:12,weight:.bold,design:.monospaced)).buttonStyle(.plain)
+        }.padding(4).foregroundStyle(.black).accessibilityIdentifier("main-options")
+    }
+    private var sheetGrid: some View {
+        let firstRow = min(max(1,model.sheetRow - 1),43)
+        return VStack(spacing:1) {
+            HStack(spacing:1) {
+                Text(" ").frame(width:18)
+                ForEach(0..<5,id: \.self) { col in Text(String(UnicodeScalar(65 + col)!)).frame(maxWidth:.infinity) }
+            }
+            ForEach(firstRow..<(firstRow + 3),id: \.self) { row in
+                HStack(spacing:1) {
+                    Text("\(row)").frame(width:18)
+                    ForEach(0..<5,id: \.self) { col in
+                        let address = String(UnicodeScalar(65 + col)!) + String(row)
+                        let selected = row == model.sheetRow && col == model.sheetColumn
+                        Button { model.editSheetCell(column:col,row:row) } label: {
+                            Text(model.sheetCells[address] ?? " ").lineLimit(1).frame(maxWidth:.infinity,minHeight:15)
+                                .foregroundStyle(selected ? Color.white : Color.black)
+                                .background(selected ? Color.black : Color.black.opacity(0.08))
+                        }.buttonStyle(.plain).accessibilityLabel("Célula \(address), \(model.sheetCells[address] ?? "vazia")")
+                    }
+                }
+            }
+            Text("\(String(UnicodeScalar(65 + model.sheetColumn)!))\(model.sheetRow)  =: editar").frame(maxWidth:.infinity,alignment:.leading)
+        }.font(.system(size:10,weight:.medium,design:.monospaced)).padding(3).foregroundStyle(.black).accessibilityIdentifier("sheet-grid")
     }
     private var catalog: some View {
         VStack(alignment:.leading,spacing:2) {
@@ -93,7 +126,7 @@ struct CalculatorView: View {
         }.padding(3).foregroundStyle(.black).accessibilityIdentifier("catalog")
     }
     private var advanced: some View {
-        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular", "DMS":"Graus, minutos e segundos", "FATOR":"Fatoração prima", "ENG":"Notação de engenharia", "CONV":"Conversão"]
+        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular", "DMS":"Graus, minutos e segundos", "FATOR":"Fatoração prima", "ENG":"Notação de engenharia", "CONV":"Conversão", "Δ%":"Variação percentual"]
         return VStack(alignment:.leading,spacing:2) {
             Text(model.advancedOperation.isEmpty ? (captions[model.advancedMode ?? ""] ?? "Modo") : model.advancedOperation).font(.system(size:10,weight:.bold)).lineLimit(1)
             if model.operationsOpen {

@@ -912,6 +912,7 @@ case 'Distribuição':{const op=input.operation||'Normal CDF';if(op==='Normal CD
 case 'Tabela':{let two=input.operation==='Duas funções';value=m.makeTable(String(f[0]).replaceAll(',','.'),two?String(f[1]).replaceAll(',','.'):null,num(two?2:1),num(two?3:2),num(two?4:3),options);break;}
 case 'Equação':{const op=input.operation||'Grau 2';if(op.startsWith('Sistema')){const n=Number(op.match(/[234]/)?.[0]);if(!n)throw Error('Syntax ERROR');const a=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>num(r*(n+1)+c))),b=Array.from({length:n},(_,r)=>num(r*(n+1)+n));value=l.solveSystem(a,b)}else value=l.polynomialRoots(f.map((_,i)=>num(i)));break;}
 case 'Desigualdade':value=m.solveInequality([num(0),num(1),num(2)],input.operation||'>=');break;
+case 'Δ%':{const initial=num(0),final=num(1);if(initial===0)throw Error('Math ERROR');value=(final-initial)/initial*100;if(!Number.isFinite(value))throw Error('Math ERROR');break;}
 case 'Proporção':value=m.solveProportion(num(0),num(1),num(2),input.operation||'D');break;
 case 'Integral':value=cal.integral(String(f[0]).replaceAll(',','.'),num(1),num(2),options);break;
 case 'Derivada':value=cal.derivative(String(f[0]).replaceAll(',','.'),num(1),options);break;

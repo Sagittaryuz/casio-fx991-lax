@@ -27,7 +27,7 @@ import Foundation
         for key in ["optn", "down", "equals", "1", "down", "2", "down", "3", "down", "4", "equals"] { calculator.press(key) }
         await waitForResult()
         if !calculator.advancedResult.contains("-2") { failures.append("2×2 inverse did not produce expected value: \(calculator.advancedResult)") }
-        calculator.press("menu"); calculator.press("8")
+        calculator.press("menu"); calculator.press("8"); calculator.press("equals")
         for key in ["4", "0", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.advancedResult != "40" { failures.append("Sheet A1 expected 40, got \(calculator.advancedResult)") }
@@ -63,6 +63,16 @@ import Foundation
         calculator.press("on")
         for key in ["menu", "4", "1", "3", "left", "2"] { calculator.press(key) }
         if calculator.advancedFields.first != "123" { failures.append("Advanced field insertion failed") }
+        calculator.press("on")
+        for key in ["optn", "1", "1", "0", "0", "down", "1", "2", "5", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.advancedResult != "25" { failures.append("Delta percent expected 25, got \(calculator.advancedResult)") }
+        calculator.press("on")
+        for key in ["menu", "8", "right", "down", "equals", "4", "2", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.sheetGrid || calculator.sheetCells["B2"] != "42" { failures.append("Grid B2 did not save") }
+        calculator.press("equals")
+        if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
