@@ -55,6 +55,25 @@ struct NaturalLine: View {
                 render(Array(chars[(cut+1)...]),start:start + cut + 1,size:size * 0.65)
             }.fixedSize())
         }
+        if chars.count >= 7, String(chars.prefix(4)) == "mix(", chars.last == ")" {
+            var depth = 0, separators: [Int] = []
+            for i in 4..<(chars.count - 1) {
+                if chars[i] == "(" { depth += 1 }
+                else if chars[i] == ")" { depth -= 1 }
+                else if chars[i] == ";" && depth == 0 { separators.append(i) }
+            }
+            if separators.count == 2 {
+                let a = separators[0], b = separators[1]
+                return AnyView(HStack(spacing:2) {
+                    render(Array(chars[4..<a]),start:start + 4,size:size)
+                    VStack(spacing:0) {
+                        render(Array(chars[(a + 1)..<b]),start:start + a + 1,size:size * 0.7)
+                        Rectangle().frame(height:1)
+                        render(Array(chars[(b + 1)..<(chars.count - 1)]),start:start + b + 1,size:size * 0.7)
+                    }.fixedSize()
+                }.fixedSize())
+            }
+        }
         // Two-argument templates use a semicolon in the native editor; only split
         // at the outer level so nested expressions retain their source offsets.
         for (prefix, isRoot) in [("nthroot(", true), ("logbase(", false)] {

@@ -26,3 +26,14 @@ test('polar complex, base XNOR, vector normalization and scaling, higher inequal
 });
 
 test('complex inputs accept decimal commas',()=>{const z=JSON.parse(advanced('Complexos',['1,5+2i','0,5+1i'],{operation:'Somar'}).result);assert.equal(z.re,2);assert.equal(z.im,3)});
+test('matrix subtraction and scalar product preserve dimensions',()=>{
+ assert.deepEqual(JSON.parse(advanced('Matriz',['1','2','3','4','4','3','2','1'],{operation:'Subtrair'}).result),[[-3,-1],[1,3]]);
+ assert.deepEqual(JSON.parse(advanced('Matriz',['1','2','3','4','-2'],{operation:'Escalar por número'}).result),[[-2,-4],[-6,-8]]);
+ assert.equal(advanced('Matriz',['1','2','3','4',''],{operation:'Escalar por número'}).ok,false);
+});
+test('sheet grid values compute formulas and isolate broken cells',()=>{
+ const a=advanced('Planilha',['A1','40']);const b=advanced('Planilha',['B1','=A1*2'],{snapshot:a.snapshot});
+ const parsed=JSON.parse(b.snapshot);parsed.cells.C1='=1/0';const result=advanced('PlanilhaVisualizar',[],{snapshot:JSON.stringify(parsed)});
+ assert.deepEqual(JSON.parse(result.result),{A1:'40',B1:'80',C1:'ERRO'});
+ assert.equal(advanced('PlanilhaVisualizar',[],{snapshot:'not-json'}).ok,false);
+});

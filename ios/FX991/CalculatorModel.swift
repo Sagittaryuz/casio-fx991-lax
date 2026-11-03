@@ -93,12 +93,14 @@ private enum Engine {
     @Published var sheetColumn = 0
     @Published var sheetRow = 1
     @Published var sheetCells: [String:String] = [:]
+    @Published var sheetValues: [String:String] = [:]
+    private var sheetGeneration = 0
     @Published var operationsOpen = false
     @Published var operationIndex = 0
     static let operations: [String: [String]] = [
         "Complexos": ["Somar", "Subtrair", "Multiplicar", "Dividir", "Retangular → polar", "Polar → retangular"],
         "Base-N": ["Converter", "Somar", "Subtrair", "Multiplicar", "Dividir", "AND", "OR", "XOR", "XNOR", "NOT"],
-        "Matriz": ["Determinante", "Inversa", "Transposta", "Somar", "Multiplicar", "Determinante 3×3", "Inversa 3×3", "Transposta 3×3", "Somar 3×3", "Multiplicar 3×3", "Determinante 4×4", "Inversa 4×4", "Transposta 4×4", "Somar 4×4", "Multiplicar 4×4"],
+        "Matriz": ["Determinante", "Inversa", "Transposta", "Somar", "Multiplicar", "Determinante 3×3", "Inversa 3×3", "Transposta 3×3", "Somar 3×3", "Multiplicar 3×3", "Determinante 4×4", "Inversa 4×4", "Transposta 4×4", "Somar 4×4", "Multiplicar 4×4", "Subtrair", "Escalar por número", "Subtrair 3×3", "Escalar por número 3×3", "Subtrair 4×4", "Escalar por número 4×4"],
         "Vetor": ["Escalar", "Vetorial", "Somar", "Subtrair", "Norma", "Ângulo", "Escalar 2D", "Somar 2D", "Subtrair 2D", "Norma 2D", "Ângulo 2D", "Unitário", "Escalar por número", "Unitário 2D", "Escalar por número 2D"],
         "Estatística": ["1 variável", "Linear", "Quadrática", "Logarítmica", "Exponencial", "Potência", "Inversa"],
         "Tabela": ["Uma função", "Duas funções"],
@@ -130,15 +132,26 @@ private enum Engine {
     private var recallPending = false
     private var completed = false
     private struct EditSnapshot { let expression: String; let cursor: Int; let result: String; let completed: Bool; let exact: String?; let decimal: String; let showExact: Bool }
-    private var editSnapshot: EditSnapshot?
-    private func rememberEdit() {
-        editSnapshot = EditSnapshot(expression:expression,cursor:cursor,result:result,completed:completed,exact:lastExact,decimal:lastDecimal,showExact:showExact)
+    private var undoStack: [EditSnapshot] = []
+    private var redoStack: [EditSnapshot] = []
+    private func currentEdit() -> EditSnapshot {
+        EditSnapshot(expression:expression,cursor:cursor,result:result,completed:completed,exact:lastExact,decimal:lastDecimal,showExact:showExact)
     }
-    private func swapEdit() {
-        guard let previous = editSnapshot else { status = "NADA PARA DESFAZER"; return }
-        rememberEdit()
-        expression = previous.expression; cursor = previous.cursor; result = previous.result; completed = previous.completed
-        lastExact = previous.exact; lastDecimal = previous.decimal; showExact = previous.showExact; status = "CALCULAR"
+    private func rememberEdit() {
+        undoStack.append(currentEdit()); if undoStack.count > 100 { undoStack.removeFirst() }
+        redoStack.removeAll()
+    }
+    private func applyEdit(_ state: EditSnapshot) {
+        expression = state.expression; cursor = state.cursor; result = state.result; completed = state.completed
+        lastExact = state.exact; lastDecimal = state.decimal; showExact = state.showExact; status = "CALCULAR"
+    }
+    private func undoEdit() {
+        guard let state = undoStack.popLast() else { status = "NADA PARA DESFAZER"; return }
+        redoStack.append(currentEdit()); applyEdit(state)
+    }
+    private func redoEdit() {
+        guard let state = redoStack.popLast() else { status = "NADA PARA REFAZER"; return }
+        undoStack.append(currentEdit()); applyEdit(state)
     }
     private var lastExact: String?
     private var lastDecimal = "0"
@@ -167,6 +180,7 @@ private enum Engine {
         if mainOptionsOpen {
             if action == "clear" || action == "menu" || action == "left" { mainOptionsOpen = false }
             else if action == "1" || action == "equals" { mainOptionsOpen = false; openAdvanced("Δ%") }
+            else if action == "2" { mainOptionsOpen = false; redoEdit() }
             return
         }
         if setupVisible {
@@ -204,7 +218,7 @@ private enum Engine {
         if shift && ["toggle", "9", "del", "clear", "optn"].contains(action) {
             status = "FUNÇÃO SHIFT NÃO DISPONÍVEL"; return
         }
-        if alt && action == "del" { swapEdit(); return }
+        if alt && action == "del" { undoEdit(); return }
         if alt && action == "calc" { insert("="); return }
         if alt && variableKeys[action] == nil { status = "FUNÇÃO ALPHA NÃO DISPONÍVEL"; return }
         if (alt || storePending || recallPending), let name = variableKeys[action] {
@@ -313,7 +327,8 @@ private enum Engine {
         if name == "Matriz" {
             let dimension = selected.contains("3×3") ? 3 : selected.contains("4×4") ? 4 : 2
             names = (0..<(dimension * dimension)).map { "A\($0 / dimension + 1)\($0 % dimension + 1)" }
-            if selected.hasPrefix("Somar") || selected.hasPrefix("Multiplicar") {
+            if selected.hasPrefix("Escalar por número") { names.append("k") }
+            else if selected.hasPrefix("Somar") || selected.hasPrefix("Multiplicar") || selected.hasPrefix("Subtrair") {
                 names += (0..<(dimension * dimension)).map { "B\($0 / dimension + 1)\($0 % dimension + 1)" }
             }
         }
@@ -331,7 +346,7 @@ private enum Engine {
             let dimension = selected.contains("3×3") ? 3 : selected.contains("4×4") ? 4 : 2
             names = (0..<(dimension * (dimension + 1))).map { i in i % (dimension + 1) == dimension ? "b\(i / (dimension + 1) + 1)" : "a\(i / (dimension + 1) + 1)\(i % (dimension + 1) + 1)" }
         }
-        if name == "Planilha" { sheetGrid = true }
+        if name == "Planilha" { sheetGrid = true; refreshSheetValues() }
         advancedMode = name; advancedOperation = selected; operationsOpen = false; operationIndex = 0; advancedLabels = names
         advancedFields = Array(repeating: "", count: names.count)
         if name == "Planilha" { advancedFields[0] = "A1"; advancedIndex = 1 }
@@ -445,11 +460,20 @@ private enum Engine {
                 if let snapshot = value.snapshot {
                     self.sheetSnapshot = snapshot; UserDefaults.standard.set(snapshot, forKey:self.sheetKey)
                     if let data = snapshot.data(using:.utf8), let object = try? JSONSerialization.jsonObject(with:data) as? [String:Any], let cells = object["cells"] as? [String:String] { self.sheetCells = cells }
-                    if kind == "Planilha" { self.sheetGrid = true }
+                    if kind == "Planilha" { self.sheetGrid = true; self.refreshSheetValues() }
                 }
             case .success(let value): self.advancedResult = value.error ?? "Erro"
             case .failure: self.advancedResult = "Erro do motor"
             }
+        }
+    }
+    private func refreshSheetValues() {
+        sheetGeneration += 1; let ticket = sheetGeneration
+        guard let snapshot = sheetSnapshot else { sheetValues = [:]; return }
+        Engine.advanced(["kind":"PlanilhaVisualizar", "snapshot":snapshot, "angle":angle]) { [weak self] outcome in
+            guard let self = self, self.sheetGeneration == ticket else { return }
+            if case .success(let value) = outcome, value.ok, let raw = value.result, let data = raw.data(using:.utf8),
+               let values = try? JSONDecoder().decode([String:String].self,from:data) { self.sheetValues = values }
         }
     }
     func editSheetCell(column: Int, row: Int) {
@@ -511,9 +535,9 @@ private enum Engine {
         generation += 1; expression = ""; cursor = 0; result = "0"; angle = "DEG"; shifted = false; alpha = false
         ans = 0; memory = 0; displayFormat = "NORM"; displayDigits = 1; pendingFormat = "NORM"; setupPage = "root"; for name in variables.keys { variables[name] = 0 }
         storePending = false; recallPending = false; completed = false; lastExact = nil; lastDecimal = "0"
-        showExact = false; editSnapshot = nil; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
+        showExact = false; undoStack.removeAll(); redoStack.removeAll(); menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
         advancedMode = nil; advancedFields = []; advancedLabels = []; advancedIndex = 0; advancedCursor = 0; advancedResult = ""; advancedNumeric = nil; advancedOperation = ""; operationsOpen = false; operationIndex = 0
-        mainOptionsOpen = false; sheetGrid = false; sheetColumn = 0; sheetRow = 1; sheetCells = [:]
+        mainOptionsOpen = false; sheetGrid = false; sheetColumn = 0; sheetRow = 1; sheetCells = [:]; sheetValues = [:]; sheetGeneration += 1
         modeDrafts.removeAll(); catalogKind = nil; catalogItems = []; catalogIndex = 0; sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey); UserDefaults.standard.removeObject(forKey:formatKey); UserDefaults.standard.removeObject(forKey:digitsKey)
     }
 }

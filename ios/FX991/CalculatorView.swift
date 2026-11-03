@@ -78,8 +78,8 @@ struct CalculatorView: View {
         VStack(alignment:.leading) {
             Text("OPTN").font(.system(size:10,weight:.bold))
             Button("1: Δ% (variação percentual)") { model.press("1") }
-                .font(.system(size:12,weight:.bold,design:.monospaced)).buttonStyle(.plain)
-        }.padding(4).foregroundStyle(.black).accessibilityIdentifier("main-options")
+            Button("2: Refazer edição") { model.press("2") }
+        }.font(.system(size:12,weight:.bold,design:.monospaced)).buttonStyle(.plain).padding(4).foregroundStyle(.black).accessibilityIdentifier("main-options")
     }
     private var sheetGrid: some View {
         let firstRow = min(max(1,model.sheetRow - 1),43)
@@ -95,10 +95,10 @@ struct CalculatorView: View {
                         let address = String(UnicodeScalar(65 + col)!) + String(row)
                         let selected = row == model.sheetRow && col == model.sheetColumn
                         Button { model.editSheetCell(column:col,row:row) } label: {
-                            Text(model.sheetCells[address] ?? " ").lineLimit(1).frame(maxWidth:.infinity,minHeight:15)
+                            Text(model.sheetValues[address] ?? model.sheetCells[address] ?? " ").lineLimit(1).frame(maxWidth:.infinity,minHeight:15)
                                 .foregroundStyle(selected ? Color.white : Color.black)
                                 .background(selected ? Color.black : Color.black.opacity(0.08))
-                        }.buttonStyle(.plain).accessibilityLabel("Célula \(address), \(model.sheetCells[address] ?? "vazia")")
+                        }.buttonStyle(.plain).accessibilityLabel("Célula \(address), \(model.sheetValues[address] ?? model.sheetCells[address] ?? "vazia")")
                     }
                 }
             }

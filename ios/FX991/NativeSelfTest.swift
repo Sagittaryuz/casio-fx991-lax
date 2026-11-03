@@ -79,13 +79,19 @@ import Foundation
         for key in ["menu", "8", "right", "down", "equals", "4", "2", "equals"] { calculator.press(key) }
         await waitForResult()
         if !calculator.sheetGrid || calculator.sheetCells["B2"] != "42" { failures.append("Grid B2 did not save") }
+        for _ in 0..<200 { if calculator.sheetValues["B2"] == "42" { break }; try? await Task.sleep(nanoseconds:50_000_000) }
+        if calculator.sheetValues["B2"] != "42" { failures.append("Grid value was not evaluated") }
         calculator.press("equals")
         if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")
         for key in ["1", "2", "3", "alpha", "del"] { calculator.press(key) }
         if calculator.expression != "12" { failures.append("Undo failed: \(calculator.expression)") }
         calculator.press("alpha"); calculator.press("del")
-        if calculator.expression != "123" { failures.append("Redo failed: \(calculator.expression)") }
+        if calculator.expression != "1" { failures.append("Second undo failed: \(calculator.expression)") }
+        calculator.press("optn"); calculator.press("2")
+        if calculator.expression != "12" { failures.append("First redo failed: \(calculator.expression)") }
+        calculator.press("optn"); calculator.press("2")
+        if calculator.expression != "123" { failures.append("Second redo failed: \(calculator.expression)") }
         calculator.press("clear"); calculator.press("alpha"); calculator.press("del")
         if calculator.expression != "123" { failures.append("Undo clear failed") }
         calculator.press("on")
@@ -101,6 +107,13 @@ import Foundation
         for key in ["3", "down", "4", "equals"] { calculator.press(key) }
         await waitForResult()
         if !calculator.advancedResult.contains("0,6") || !calculator.advancedResult.contains("0,8") { failures.append("Vector normalization failed: \(calculator.advancedResult)") }
+        calculator.press("on")
+        for key in ["menu", "4"] { calculator.press(key) }
+        if let scaleIndex = CalculatorModel.operations["Matriz"]?.firstIndex(of:"Escalar por número") { calculator.selectAdvancedOperation(scaleIndex) }
+        else { failures.append("Matrix scaling operation missing") }
+        for key in ["1", "down", "2", "down", "3", "down", "4", "down", "2", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("2  4") || !calculator.advancedResult.contains("6  8") { failures.append("Matrix scaling failed: \(calculator.advancedResult)") }
         calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
