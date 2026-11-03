@@ -74,8 +74,18 @@ struct CalculatorView: View {
     private var advanced: some View {
         let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular"]
         return VStack(alignment:.leading,spacing:2) {
-            Text(captions[model.advancedMode ?? ""] ?? "Modo").font(.system(size:10,weight:.bold)).lineLimit(1)
-            ScrollViewReader { reader in
+            Text(model.advancedOperation.isEmpty ? (captions[model.advancedMode ?? ""] ?? "Modo") : model.advancedOperation).font(.system(size:10,weight:.bold)).lineLimit(1)
+            if model.operationsOpen {
+                ScrollViewReader { reader in
+                    ScrollView(.vertical,showsIndicators:false) {
+                        VStack(alignment:.leading,spacing:1) {
+                            ForEach(Array((CalculatorModel.operations[model.advancedMode ?? ""] ?? []).enumerated()), id: \.offset) { i, name in
+                                Button { model.selectAdvancedOperation(i) } label: { Text(name).font(.system(size:12,weight:.medium,design:.monospaced)).frame(maxWidth:.infinity,alignment:.leading).foregroundStyle(i == model.operationIndex ? Color.white : Color.black).background(i == model.operationIndex ? Color.black : Color.clear) }.buttonStyle(.plain).id(i)
+                            }
+                        }
+                    }.onChange(of:model.operationIndex) { i in reader.scrollTo(i,anchor:.center) }
+                }
+            } else { ScrollViewReader { reader in
                 ScrollView(.vertical,showsIndicators:false) {
                     VStack(alignment:.leading,spacing:1) {
                         ForEach(model.advancedFields.indices,id: \.self) { i in
@@ -89,7 +99,9 @@ struct CalculatorView: View {
                     }
                 }.onChange(of:model.advancedIndex) { index in reader.scrollTo(index,anchor:.center) }
             }
+            if model.status != "CALCULAR" { Text(model.status).font(.system(size:9,weight:.bold)).lineLimit(1) }
             if !model.advancedResult.isEmpty { ScrollView(.horizontal,showsIndicators:false) { Text(model.advancedResult).font(.system(size:12,weight:.bold,design:.monospaced)).lineLimit(1).accessibilityIdentifier("advanced-result") } }
+            }
         }.padding(3).foregroundStyle(.black).accessibilityIdentifier("advanced-mode")
     }
     private var setup: some View {

@@ -21,6 +21,7 @@ jobs:
       - name: Build iOS simulator (no signing)
         run: xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
       - name: Launch on an available iPhone simulator
+        timeout-minutes: 8
         run: |
           DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); devices=[d for group in data["devices"].values() for d in group if d.get("isAvailable") and d["name"].startswith("iPhone")]; print(devices[0]["udid"] if devices else "")')
           test -n "$DEVICE"

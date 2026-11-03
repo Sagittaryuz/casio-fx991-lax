@@ -20,6 +20,9 @@ import Foundation
         for key in ["1", "down", "2", "down", "3", "down", "4", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.advancedResult != "-2" { failures.append("2×2 determinant expected -2, got \(calculator.advancedResult)") }
+        for key in ["optn", "down", "equals", "1", "down", "2", "down", "3", "down", "4", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("-2") { failures.append("2×2 inverse did not produce expected value: \(calculator.advancedResult)") }
         calculator.press("menu"); calculator.press("8")
         for key in ["4", "0", "equals"] { calculator.press(key) }
         await waitForResult()
