@@ -37,3 +37,13 @@ test('sheet grid values compute formulas and isolate broken cells',()=>{
  assert.deepEqual(JSON.parse(result.result),{A1:'40',B1:'80',C1:'ERRO'});
  assert.equal(advanced('PlanilhaVisualizar',[],{snapshot:'not-json'}).ok,false);
 });
+test('sheet copy and fill adjust references transactionally',()=>{
+ const a=advanced('Planilha',['A1','10']);const b=advanced('Planilha',['B1','=A1*2'],{snapshot:a.snapshot});
+ const c=advanced('PlanilhaAções',['B1','B2'],{operation:'Copiar',snapshot:b.snapshot});assert.equal(c.ok,true);assert.equal(JSON.parse(c.snapshot).cells.B2,'=A2*2');
+ const d=advanced('PlanilhaAções',['A1','A3'],{operation:'Preencher',snapshot:c.snapshot});assert.deepEqual([JSON.parse(d.snapshot).cells.A2,JSON.parse(d.snapshot).cells.A3],['10','10']);
+ const v=advanced('PlanilhaVisualizar',[],{snapshot:d.snapshot});assert.equal(JSON.parse(v.result).B2,'20');
+ assert.equal(advanced('PlanilhaAções',['B2','A1'],{operation:'Preencher',snapshot:b.snapshot}).ok,false);
+ assert.equal(advanced('PlanilhaAções',['A1','F1'],{operation:'Copiar',snapshot:b.snapshot}).ok,false);
+ assert.equal(JSON.parse(b.snapshot).cells.A2,undefined);
+ const anchored=JSON.parse(b.snapshot);anchored.cells.B1='=A1+$A$1';const shifted=advanced('PlanilhaAções',['B1','B2'],{operation:'Copiar',snapshot:JSON.stringify(anchored)});assert.equal(JSON.parse(shifted.snapshot).cells.B2,'=A2+$A$1');
+});

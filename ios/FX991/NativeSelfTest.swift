@@ -81,6 +81,17 @@ import Foundation
         if !calculator.sheetGrid || calculator.sheetCells["B2"] != "42" { failures.append("Grid B2 did not save") }
         for _ in 0..<200 { if calculator.sheetValues["B2"] == "42" { break }; try? await Task.sleep(nanoseconds:50_000_000) }
         if calculator.sheetValues["B2"] != "42" { failures.append("Grid value was not evaluated") }
+        for key in ["optn", "alpha", "dms", "3", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.sheetGrid || calculator.sheetCells["B3"] != "42" { failures.append("Sheet copy failed") }
+        for key in ["optn", "optn", "down", "equals", "alpha", "dms", "4", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.sheetGrid || calculator.sheetCells["B4"] != "42" { failures.append("Sheet fill failed") }
+        for key in ["optn", "alpha", "tan", "1", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.advancedMode != "PlanilhaAções" || calculator.sheetCells["B4"] != "42" { failures.append("Invalid copy changed sheet") }
+        calculator.press("menu")
+        if !calculator.sheetGrid || calculator.advancedMode != "Planilha" { failures.append("Sheet action cancel failed") }
         calculator.press("equals")
         if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")

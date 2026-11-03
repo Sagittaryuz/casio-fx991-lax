@@ -102,7 +102,7 @@ struct CalculatorView: View {
                     }
                 }
             }
-            Text("\(String(UnicodeScalar(65 + model.sheetColumn)!))\(model.sheetRow)  =: editar").frame(maxWidth:.infinity,alignment:.leading)
+            Text("\(String(UnicodeScalar(65 + model.sheetColumn)!))\(model.sheetRow)  =: editar  OPTN: ações").frame(maxWidth:.infinity,alignment:.leading)
         }.font(.system(size:10,weight:.medium,design:.monospaced)).padding(3).foregroundStyle(.black).accessibilityIdentifier("sheet-grid")
     }
     private var catalog: some View {
@@ -126,7 +126,7 @@ struct CalculatorView: View {
         }.padding(3).foregroundStyle(.black).accessibilityIdentifier("catalog")
     }
     private var advanced: some View {
-        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular", "DMS":"Graus, minutos e segundos", "FATOR":"Fatoração prima", "ENG":"Notação de engenharia", "CONV":"Conversão", "Δ%":"Variação percentual"]
+        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "PlanilhaAções":"Ações da planilha", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular", "DMS":"Graus, minutos e segundos", "FATOR":"Fatoração prima", "ENG":"Notação de engenharia", "CONV":"Conversão", "Δ%":"Variação percentual"]
         return VStack(alignment:.leading,spacing:2) {
             Text(model.advancedOperation.isEmpty ? (captions[model.advancedMode ?? ""] ?? "Modo") : model.advancedOperation).font(.system(size:10,weight:.bold)).lineLimit(1)
             if model.operationsOpen {

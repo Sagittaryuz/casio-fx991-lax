@@ -104,6 +104,7 @@ private enum Engine {
         "Vetor": ["Escalar", "Vetorial", "Somar", "Subtrair", "Norma", "Ângulo", "Escalar 2D", "Somar 2D", "Subtrair 2D", "Norma 2D", "Ângulo 2D", "Unitário", "Escalar por número", "Unitário 2D", "Escalar por número 2D"],
         "Estatística": ["1 variável", "Linear", "Quadrática", "Logarítmica", "Exponencial", "Potência", "Inversa"],
         "Tabela": ["Uma função", "Duas funções"],
+        "PlanilhaAções": ["Copiar", "Preencher"],
         "DMS": ["Decimal → DMS", "DMS → decimal"],
         "Distribuição": ["Normal CDF", "Normal PDF", "Normal inversa", "Binomial PDF", "Binomial CDF", "Poisson PDF", "Poisson CDF"],
         "Equação": ["Grau 2", "Grau 3", "Grau 4", "Sistema 2×2", "Sistema 3×3", "Sistema 4×4"],
@@ -306,7 +307,7 @@ private enum Engine {
             "Complexos": ["z₁", "z₂"], "Base-N": ["Valor", "Base origem", "Base destino"],
             "Matriz": ["a₁₁", "a₁₂", "a₂₁", "a₂₂"], "Vetor": ["A₁", "A₂", "A₃", "B₁", "B₂", "B₃"],
             "Estatística": ["x₁", "x₂", "x₃"], "Distribuição": ["x", "μ", "σ"],
-            "Planilha": ["Célula", "Conteúdo"], "Tabela": ["f(x)", "Início", "Fim", "Passo"],
+            "Planilha": ["Célula", "Conteúdo"], "PlanilhaAções": ["Origem", "Destino"], "Tabela": ["f(x)", "Início", "Fim", "Passo"],
             "Equação": ["a", "b", "c"], "Desigualdade": ["a", "b", "c"],
             "Proporção": ["a", "b", "c"], "Integral": ["f(x)", "Inferior", "Superior"],
             "Derivada": ["f(x)", "x"], "Somatório": ["f(x)", "Início", "Fim"],
@@ -350,6 +351,7 @@ private enum Engine {
         advancedMode = name; advancedOperation = selected; operationsOpen = false; operationIndex = 0; advancedLabels = names
         advancedFields = Array(repeating: "", count: names.count)
         if name == "Planilha" { advancedFields[0] = "A1"; advancedIndex = 1 }
+        else if name == "PlanilhaAções" { advancedFields[0] = String(UnicodeScalar(65 + sheetColumn)!) + String(sheetRow); advancedIndex = 1 }
         else if name == "DMS" || name == "FATOR" || name == "ENG" { advancedFields[0] = completed ? String(ans) : expression; if name == "ENG" { advancedFields[1] = "0" }; advancedIndex = 0 }
         else if name == "CALC" || name == "SOLVE" { advancedFields[0] = expression; advancedFields[1] = "0"; advancedFields[2] = "0"; advancedFields[3] = "0"; advancedIndex = 0 }
         else { advancedIndex = 0 }
@@ -387,6 +389,7 @@ private enum Engine {
             else if action == "up" { sheetRow = max(1,sheetRow - 1) }
             else if action == "down" { sheetRow = min(45,sheetRow + 1) }
             else if action == "equals" { editSheetCell(column:sheetColumn,row:sheetRow) }
+            else if action == "optn" { openAdvanced("PlanilhaAções") }
             return
         }
         guard let kind = advancedMode, advancedFields.indices.contains(advancedIndex) else { return }
@@ -404,6 +407,7 @@ private enum Engine {
             else { operationIndex = options.firstIndex(of:advancedOperation) ?? 0; operationsOpen = true }
             return
         }
+        if action == "menu" && kind == "PlanilhaAções" { openAdvanced("Planilha"); return }
         if action == "menu" {
             modeDrafts[kind] = ModeDraft(operation:advancedOperation,fields:advancedFields,selected:advancedIndex,cursor:advancedCursor,result:advancedResult,numeric:advancedNumeric)
             advancedMode = nil; menuIndex = 0; menuVisible = true; return
@@ -460,7 +464,8 @@ private enum Engine {
                 if let snapshot = value.snapshot {
                     self.sheetSnapshot = snapshot; UserDefaults.standard.set(snapshot, forKey:self.sheetKey)
                     if let data = snapshot.data(using:.utf8), let object = try? JSONSerialization.jsonObject(with:data) as? [String:Any], let cells = object["cells"] as? [String:String] { self.sheetCells = cells }
-                    if kind == "Planilha" { self.sheetGrid = true; self.refreshSheetValues() }
+                    if kind == "PlanilhaAções" { self.openAdvanced("Planilha") }
+                    else if kind == "Planilha" { self.sheetGrid = true; self.refreshSheetValues() }
                 }
             case .success(let value): self.advancedResult = value.error ?? "Erro"
             case .failure: self.advancedResult = "Erro do motor"
