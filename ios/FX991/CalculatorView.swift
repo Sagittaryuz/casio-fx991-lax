@@ -8,6 +8,64 @@ private struct Key: Identifiable {
     var blue = false
     var id: String { action }
 }
+/// Corner geometry follows the reviewed keys in the reference, including STO and M+.
+private struct KeyOutline: Shape {
+    let action: String
+    func path(in rect: CGRect) -> Path {
+        let small = min(5, min(rect.width,rect.height) / 4)
+        let large = min(rect.width * 0.42, rect.height * 0.55)
+        let tl = ["optn", "7"].contains(action) ? large : small
+        let tr = ["variableX", "clear"].contains(action) ? large : small
+        let bl = ["store", "0"].contains(action) ? large : small
+        let br = ["memory", "equals"].contains(action) ? large : small
+        var p = Path()
+        p.move(to:CGPoint(x:rect.minX + tl,y:rect.minY))
+        p.addLine(to:CGPoint(x:rect.maxX - tr,y:rect.minY))
+        p.addQuadCurve(to:CGPoint(x:rect.maxX,y:rect.minY + tr),control:CGPoint(x:rect.maxX,y:rect.minY))
+        p.addLine(to:CGPoint(x:rect.maxX,y:rect.maxY - br))
+        p.addQuadCurve(to:CGPoint(x:rect.maxX - br,y:rect.maxY),control:CGPoint(x:rect.maxX,y:rect.maxY))
+        p.addLine(to:CGPoint(x:rect.minX + bl,y:rect.maxY))
+        p.addQuadCurve(to:CGPoint(x:rect.minX,y:rect.maxY - bl),control:CGPoint(x:rect.minX,y:rect.maxY))
+        p.addLine(to:CGPoint(x:rect.minX,y:rect.minY + tl))
+        p.addQuadCurve(to:CGPoint(x:rect.minX + tl,y:rect.minY),control:CGPoint(x:rect.minX,y:rect.minY))
+        p.closeSubpath(); return p
+    }
+}
+
+/// Vector glyphs adapted from the corresponding in-repository web key drawings.
+private struct MathKeyGlyph: View {
+    let action: String
+    var body: some View {
+        Canvas { context, size in
+            let width: CGFloat = ["integral", "log"].contains(action) ? 50 : 40
+            let scale = min(size.width / width, size.height / 28) * 0.72
+            context.translateBy(x:(size.width - width * scale) / 2,y:(size.height - 28 * scale) / 2)
+            context.scaleBy(x:scale,y:scale)
+            var path = Path()
+            func box(_ x:CGFloat,_ y:CGFloat,_ w:CGFloat,_ h:CGFloat) { path.addRect(CGRect(x:x,y:y,width:w,height:h)) }
+            func line(_ a:CGPoint,_ b:CGPoint) { path.move(to:a); path.addLine(to:b) }
+            func text(_ value:String,_ x:CGFloat,_ y:CGFloat,_ font:Font) {
+                context.draw(Text(value).font(font).foregroundColor(.white),at:CGPoint(x:x,y:y),anchor:.topLeading)
+            }
+            switch action {
+            case "fraction":
+                box(14,2,12,7); line(CGPoint(x:7,y:13),CGPoint(x:33,y:13)); box(14,17,12,7)
+            case "sqrt":
+                path.move(to:CGPoint(x:3,y:15)); path.addLines([CGPoint(x:8,y:14),CGPoint(x:12,y:22),CGPoint(x:17,y:5),CGPoint(x:36,y:5)]); box(20,9,12,11)
+            case "integral":
+                box(17,1,6,5); box(17,24,6,5); box(26,10,9,9)
+                text("∫",5,0,.system(size:26,design:.serif)); text("dx",37,8,.system(size:12,design:.serif).italic())
+            case "power":
+                text("x",6,1,.system(size:23,design:.serif).italic()); box(23,3,10,9)
+            case "log":
+                text("log",1,4,.system(size:17,weight:.bold)); box(30,18,7,7); box(39,9,9,10)
+            case "variableX": text("x",7,2,.system(size:25,design:.serif).italic())
+            default: break
+            }
+            context.stroke(path,with:.color(.white),lineWidth:1.5)
+        }.accessibilityHidden(true)
+    }
+}
 private let scientific: [[Key]] = [
     [Key(title:"OPTN",action:"optn",secondary:"QR"),Key(title:"CALC",action:"calc",secondary:"SOLVE"),Key(title:"∫",action:"integral",secondary:"d/dx"),Key(title:"x",action:"variableX",secondary:"Σ")],
     [Key(title:"□⁄□",action:"fraction",secondary:"a b/c"),Key(title:"√□",action:"sqrt",secondary:"∛"),Key(title:"x²",action:"square",secondary:"x³"),Key(title:"x□",action:"power",secondary:"□√"),Key(title:"log□",action:"log",secondary:"10ˣ"),Key(title:"ln",action:"ln",secondary:"eˣ")],
@@ -36,7 +94,8 @@ struct CalculatorView: View {
             let width = geometry.size.width
             let height = geometry.size.height
             ZStack {
-                photo("body-photo").resizable().frame(width: width, height: height)
+                photo("body-photo").resizable().frame(width:width,height:height + 16).offset(y:-16)
+                    .frame(width:width,height:height,alignment:.top).clipped()
                 VStack(spacing: 0) {
                     display.frame(height: height * 0.19).padding(.horizontal, width * 0.045).padding(.top, 10)
                     controls.frame(height: height * 0.13).padding(.horizontal, width * 0.045)
@@ -231,8 +290,11 @@ struct CalculatorView: View {
         VStack(spacing:2) {
             Text(key.secondary.isEmpty ? " " : key.secondary).font(.system(size:8,weight:.bold)).foregroundStyle(Color(red:0.85,green:0.74,blue:0.4)).lineLimit(1).minimumScaleFactor(0.6)
             Button { model.press(key.action) } label: {
-                Text(key.title).font(.system(size:numeric ? 23 : 14,weight:.bold)).foregroundStyle(key.blue ? .white : numeric ? .black : .white).frame(maxWidth:.infinity,maxHeight:.infinity)
-                    .background(LinearGradient(colors:key.blue ? [.blue,Color(red:0,green:0.18,blue:0.5)] : numeric ? [.white,Color(white:0.78)] : [Color(white:0.32),Color(white:0.09)],startPoint:.top,endPoint:.bottom),in:RoundedRectangle(cornerRadius:5))
+                Group {
+                    if ["fraction", "sqrt", "integral", "power", "log", "variableX"].contains(key.action) { MathKeyGlyph(action:key.action) }
+                    else { Text(key.title).font(.system(size:numeric ? 23 : 14,weight:.bold)).foregroundStyle(key.blue ? .white : numeric ? .black : .white) }
+                }.frame(maxWidth:.infinity,maxHeight:.infinity)
+                    .background(LinearGradient(colors:key.blue ? [.blue,Color(red:0,green:0.18,blue:0.5)] : numeric ? [.white,Color(white:0.78)] : [Color(white:0.32),Color(white:0.09)],startPoint:.top,endPoint:.bottom),in:KeyOutline(action:key.action))
             }.buttonStyle(.plain).accessibilityLabel(key.title).accessibilityIdentifier("key-\(key.action)")
         }.frame(maxWidth:.infinity,maxHeight:.infinity)
     }

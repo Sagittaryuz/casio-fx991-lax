@@ -32,3 +32,5 @@ A tecla de raiz cria o par de parênteses para entrada imediata, inclusive raíz
 Em Estatística, OPTN permite selecionar “1 variável com frequência”. Cada linha recebe x e frequência inteira não negativa; ao menos uma frequência deve ser positiva. As regressões ainda não aceitam frequência.
 
 Uma captura de simulador anterior exibiu grandes faixas pretas e corte na última linha. Foi adicionada a chave UILaunchScreen e delimitada a área da calculadora; a correção exige verificação visual da captura do novo commit.
+
+Na revisão visual do simulador, o corpo e a última linha voltaram a caber na tela após gerar UILaunchScreen. As seis legendas matemáticas principais e os cantos destacados foram redesenhados a partir dos vetores da web; o topo prateado da imagem de corpo foi recortado conforme a personalização solicitada. Uma nova captura deve ser inspecionada para verificar escala, contraste e geometria. Não houve comparação em aparelho físico.
