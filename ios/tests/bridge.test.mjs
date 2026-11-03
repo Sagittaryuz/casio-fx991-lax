@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const js=vm.createContext({});vm.runInContext(fs.readFileSync(new URL('../Resources/engine.bundle.js',import.meta.url),'utf8'),js);const run=(expression,angle='DEG',more={})=>JSON.parse(js.nativeCalculate({expression,angle,...more}));
+test('native bridge preserves scientific engine and exact output',()=>{assert.equal(run('2+3*4').value,14);assert.ok(Math.abs(run('sin(30)').value-.5)<1e-12);assert.equal(run('1/3').exact,'1/3');assert.equal(run('logbase(2;8)').value,3)});
+test('native bridge validates domains and uses supplied state',()=>{assert.equal(run('1/0').ok,false);assert.equal(run('sqrt(-1)').ok,false);assert.equal(run('A+Ans','DEG',{variables:{A:7},ans:3}).value,10)});
