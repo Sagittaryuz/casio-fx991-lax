@@ -9,7 +9,7 @@ A versão nativa usa o motor matemático da web via JavaScriptCore, com interfac
 | Base-N | Conversão e operações selecionadas, incluindo XNOR | Conjunto e fluxo não completos |
 | Matriz | Determinante, inversa, transposta, soma, subtração, produto e multiplicação por escalar, 2×2 a 4×4 | Sem gestão completa dos registradores e do editor físico |
 | Vetor | Soma, subtração, produto escalar, norma e ângulo 2D/3D; produto vetorial 3D, normalização e multiplicação por escalar | Sem todos os comandos e registradores do aparelho |
-| Estatística | Uma variável e seis regressões, com linhas adicionais | Até 200 campos; sem frequências nem todas as opções e apresentações |
+| Estatística | Uma variável, frequência para uma variável e seis regressões, com linhas adicionais | Até 200 campos; sem frequências nas regressões nem todas as opções e apresentações |
 | Distribuição | Operações selecionadas das distribuições normal, binomial e Poisson | Fluxo e cobertura não completos |
 | Planilha | Grade navegável A1–E45, edição por célula, fórmulas, copiar/preencher e persistência local | Sem migração da web; valores usam precisão numérica aproximada |
 | Tabela | Uma ou duas funções | Apresentação e navegação simplificadas |
@@ -28,3 +28,5 @@ Na grade da planilha, OPTN abre Copiar ou Preencher; a origem é a célula selec
 Setas cima/baixo também navegam pelos campos de número misto, raiz de índice e logaritmo com base. Expressões arbitrárias e todas as regras do editor físico continuam pendentes.
 
 A tecla de raiz cria o par de parênteses para entrada imediata, inclusive raízes aninhadas; a tecla de fechar avança sobre um fechamento já presente. A alternância de unidade angular persiste como a alteração pelo SETUP.
+
+Em Estatística, OPTN permite selecionar “1 variável com frequência”. Cada linha recebe x e frequência inteira não negativa; ao menos uma frequência deve ser positiva. As regressões ainda não aceitam frequência.

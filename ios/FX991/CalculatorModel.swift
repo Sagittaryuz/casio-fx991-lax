@@ -102,7 +102,7 @@ private enum Engine {
         "Base-N": ["Converter", "Somar", "Subtrair", "Multiplicar", "Dividir", "AND", "OR", "XOR", "XNOR", "NOT"],
         "Matriz": ["Determinante", "Inversa", "Transposta", "Somar", "Multiplicar", "Determinante 3×3", "Inversa 3×3", "Transposta 3×3", "Somar 3×3", "Multiplicar 3×3", "Determinante 4×4", "Inversa 4×4", "Transposta 4×4", "Somar 4×4", "Multiplicar 4×4", "Subtrair", "Escalar por número", "Subtrair 3×3", "Escalar por número 3×3", "Subtrair 4×4", "Escalar por número 4×4"],
         "Vetor": ["Escalar", "Vetorial", "Somar", "Subtrair", "Norma", "Ângulo", "Escalar 2D", "Somar 2D", "Subtrair 2D", "Norma 2D", "Ângulo 2D", "Unitário", "Escalar por número", "Unitário 2D", "Escalar por número 2D"],
-        "Estatística": ["1 variável", "Linear", "Quadrática", "Logarítmica", "Exponencial", "Potência", "Inversa"],
+        "Estatística": ["1 variável", "1 variável com frequência", "Linear", "Quadrática", "Logarítmica", "Exponencial", "Potência", "Inversa"],
         "Tabela": ["Uma função", "Duas funções"],
         "PlanilhaAções": ["Copiar", "Preencher"],
         "DMS": ["Decimal → DMS", "DMS → decimal"],
@@ -325,7 +325,8 @@ private enum Engine {
         if name == "Complexos" && selected == "Polar → retangular" { names = ["r", "θ"] }
         if name == "Desigualdade" && selected.hasPrefix("Grau 3") { names = ["a", "b", "c", "d"] }
         if name == "Desigualdade" && selected.hasPrefix("Grau 4") { names = ["a", "b", "c", "d", "e"] }
-        if name == "Estatística" && selected != "1 variável" { names = ["x₁", "y₁", "x₂", "y₂", "x₃", "y₃"] }
+        if name == "Estatística" && selected == "1 variável com frequência" { names = ["x₁", "f₁", "x₂", "f₂", "x₃", "f₃"] }
+        else if name == "Estatística" && selected != "1 variável" { names = ["x₁", "y₁", "x₂", "y₂", "x₃", "y₃"] }
         if name == "Tabela" && selected == "Duas funções" { names = ["f(x)", "g(x)", "Início", "Fim", "Passo"] }
         if name == "DMS" && selected == "DMS → decimal" { names = ["Graus", "Minutos", "Segundos"] }
         if name == "Base-N" && selected != "Converter" { names = selected == "NOT" ? ["Valor", "Base"] : ["Valor A", "Valor B", "Base"] }
@@ -363,7 +364,8 @@ private enum Engine {
         if let draft = draft, draft.fields.count == advancedFields.count || (name == "Estatística" && draft.fields.count >= advancedFields.count) {
             if name == "Estatística" && draft.fields.count > advancedLabels.count {
                 let paired = selected != "1 variável"
-                advancedLabels = (0..<draft.fields.count).map { i in paired ? "\(i % 2 == 0 ? "x" : "y")\(i / 2 + 1)" : "x\(i + 1)" }
+                let second = selected == "1 variável com frequência" ? "f" : "y"
+                advancedLabels = (0..<draft.fields.count).map { i in paired ? "\(i % 2 == 0 ? "x" : second)\(i / 2 + 1)" : "x\(i + 1)" }
             }
             advancedFields = draft.fields; advancedIndex = min(draft.selected, advancedFields.count - 1); advancedCursor = min(draft.cursor, advancedFields[advancedIndex].count); advancedResult = draft.result; advancedNumeric = draft.numeric
         }
@@ -425,7 +427,7 @@ private enum Engine {
                 let paired = advancedOperation != "1 variável"
                 let row = paired ? advancedFields.count / 2 + 1 : advancedFields.count + 1
                 advancedLabels.append("x\(row)"); advancedFields.append("")
-                if paired { advancedLabels.append("y\(row)"); advancedFields.append("") }
+                if paired { advancedLabels.append("\(advancedOperation == "1 variável com frequência" ? "f" : "y")\(row)"); advancedFields.append("") }
             }
             advancedIndex = min(advancedFields.count - 1, advancedIndex + 1); advancedCursor = advancedFields[advancedIndex].count; return
         }

@@ -47,3 +47,8 @@ test('sheet copy and fill adjust references transactionally',()=>{
  assert.equal(JSON.parse(b.snapshot).cells.A2,undefined);
  const anchored=JSON.parse(b.snapshot);anchored.cells.B1='=A1+$A$1';const shifted=advanced('PlanilhaAções',['B1','B2'],{operation:'Copiar',snapshot:JSON.stringify(anchored)});assert.equal(JSON.parse(shifted.snapshot).cells.B2,'=A2+$A$1');
 });
+test('one-variable frequency rows preserve weights and reject invalid frequencies',()=>{
+ const result=JSON.parse(advanced('Estatística',['2','3','5','2','',''],{operation:'1 variável com frequência'}).result);
+ assert.equal(result.n,5);assert.equal(result.mean,3.2);assert.equal(result.sum,16);
+ for(const bad of [['2','-1'],['2','1.5'],['2',''],['','2'],['2','0']]) assert.equal(advanced('Estatística',bad,{operation:'1 variável com frequência'}).ok,false);
+});

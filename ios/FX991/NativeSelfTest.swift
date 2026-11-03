@@ -149,6 +149,15 @@ import Foundation
         await waitForResult()
         if !calculator.advancedResult.contains("2  4") || !calculator.advancedResult.contains("6  8") { failures.append("Matrix scaling failed: \(calculator.advancedResult)") }
         calculator.press("on")
+        for key in ["menu", "6"] { calculator.press(key) }
+        if let index = CalculatorModel.operations["Estatística"]?.firstIndex(of:"1 variável com frequência") { calculator.selectAdvancedOperation(index) }
+        else { failures.append("Frequency operation missing") }
+        for key in ["2", "down", "3", "down", "5", "down", "2", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("n=5") || !calculator.advancedResult.contains("3,2") { failures.append("Frequency statistics failed: \(calculator.advancedResult)") }
+        for key in ["menu", "4", "menu", "6"] { calculator.press(key) }
+        if calculator.advancedOperation != "1 variável com frequência" || Array(calculator.advancedFields.prefix(4)) != ["2", "3", "5", "2"] { failures.append("Frequency rows were not restored") }
+        calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
            let directory = FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first {
