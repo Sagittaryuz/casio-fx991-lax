@@ -96,7 +96,8 @@ import Foundation
         if !calculator.advancedResult.contains("r=5") { failures.append("Complex polar failed: \(calculator.advancedResult)") }
         calculator.press("on")
         for key in ["menu", "5"] { calculator.press(key) }
-        calculator.selectAdvancedOperation(14)
+        if let unitIndex = CalculatorModel.operations["Vetor"]?.firstIndex(of:"Unitário 2D") { calculator.selectAdvancedOperation(unitIndex) }
+        else { failures.append("Vector operation missing") }
         for key in ["3", "down", "4", "equals"] { calculator.press(key) }
         await waitForResult()
         if !calculator.advancedResult.contains("0,6") || !calculator.advancedResult.contains("0,8") { failures.append("Vector normalization failed: \(calculator.advancedResult)") }
