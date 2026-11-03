@@ -16,3 +16,13 @@ test('native display formats match the web settings',()=>{assert.equal(run('sin(
 
 test('percent change handles gains, losses, negatives and zero baseline',()=>{assert.equal(JSON.parse(advanced('Δ%',['100','125']).result),25);assert.equal(JSON.parse(advanced('Δ%',['200','150']).result),-25);assert.equal(JSON.parse(advanced('Δ%',['-100','-50']).result),-50);assert.equal(advanced('Δ%',['0','5']).ok,false)});
 test('nested natural expressions preserve operator structure',()=>{assert.ok(Math.abs(run('(1)/((2)/(3))').value-1.5)<1e-12);assert.equal(run('sqrt((3+1)^2)').value,4);assert.equal(run('nthroot(3;27)').value,3)});
+test('polar complex, base XNOR, vector normalization and scaling, higher inequalities',()=>{
+ const polar=JSON.parse(advanced('Complexos',['3+4i'],{operation:'Retangular → polar'}).result);assert.equal(polar.radius,5);assert.ok(Math.abs(polar.angle-53.130102354)<1e-8);
+ const rect=JSON.parse(advanced('Complexos',['2','90'],{operation:'Polar → retangular'}).result);assert.ok(Math.abs(rect.re)<1e-12);assert.ok(Math.abs(rect.im-2)<1e-12);assert.equal(advanced('Complexos',['-1','90'],{operation:'Polar → retangular'}).ok,false);
+ assert.equal(JSON.parse(advanced('Base-N',['F','5','16'],{operation:'XNOR'}).result),'FFFFFFF5');
+ assert.deepEqual(JSON.parse(advanced('Vetor',['3','4'],{operation:'Unitário 2D'}).result),[.6,.8]);assert.deepEqual(JSON.parse(advanced('Vetor',['3','4','-2'],{operation:'Escalar por número 2D'}).result),[-6,-8]);assert.equal(advanced('Vetor',['0','0'],{operation:'Unitário 2D'}).ok,false);
+ const cubic=JSON.parse(advanced('Desigualdade',['1','0','0','-1'],{operation:'Grau 3 >='}).result);assert.equal(cubic.length,1);assert.ok(Math.abs(cubic[0].lower-1)<1e-8);assert.equal(cubic[0].lowerInclusive,true);
+ const quartic=JSON.parse(advanced('Desigualdade',['1','0','-5','0','4'],{operation:'Grau 4 <'}).result);assert.equal(quartic.length,2);
+});
+
+test('complex inputs accept decimal commas',()=>{const z=JSON.parse(advanced('Complexos',['1,5+2i','0,5+1i'],{operation:'Somar'}).result);assert.equal(z.re,2);assert.equal(z.im,3)});

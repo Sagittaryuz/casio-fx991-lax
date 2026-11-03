@@ -82,6 +82,25 @@ import Foundation
         calculator.press("equals")
         if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")
+        for key in ["1", "2", "3", "alpha", "del"] { calculator.press(key) }
+        if calculator.expression != "12" { failures.append("Undo failed: \(calculator.expression)") }
+        calculator.press("alpha"); calculator.press("del")
+        if calculator.expression != "123" { failures.append("Redo failed: \(calculator.expression)") }
+        calculator.press("clear"); calculator.press("alpha"); calculator.press("del")
+        if calculator.expression != "123" { failures.append("Undo clear failed") }
+        calculator.press("on")
+        for key in ["menu", "2"] { calculator.press(key) }
+        calculator.selectAdvancedOperation(4)
+        for key in ["3", "+", "4", "alpha", "eng", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("r=5") { failures.append("Complex polar failed: \(calculator.advancedResult)") }
+        calculator.press("on")
+        for key in ["menu", "5"] { calculator.press(key) }
+        calculator.selectAdvancedOperation(14)
+        for key in ["3", "down", "4", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("0,6") || !calculator.advancedResult.contains("0,8") { failures.append("Vector normalization failed: \(calculator.advancedResult)") }
+        calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
            let directory = FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first {

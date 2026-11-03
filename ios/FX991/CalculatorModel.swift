@@ -96,16 +96,16 @@ private enum Engine {
     @Published var operationsOpen = false
     @Published var operationIndex = 0
     static let operations: [String: [String]] = [
-        "Complexos": ["Somar", "Subtrair", "Multiplicar", "Dividir"],
-        "Base-N": ["Converter", "Somar", "Subtrair", "Multiplicar", "Dividir", "AND", "OR", "XOR", "NOT"],
+        "Complexos": ["Somar", "Subtrair", "Multiplicar", "Dividir", "Retangular → polar", "Polar → retangular"],
+        "Base-N": ["Converter", "Somar", "Subtrair", "Multiplicar", "Dividir", "AND", "OR", "XOR", "XNOR", "NOT"],
         "Matriz": ["Determinante", "Inversa", "Transposta", "Somar", "Multiplicar", "Determinante 3×3", "Inversa 3×3", "Transposta 3×3", "Somar 3×3", "Multiplicar 3×3", "Determinante 4×4", "Inversa 4×4", "Transposta 4×4", "Somar 4×4", "Multiplicar 4×4"],
-        "Vetor": ["Escalar", "Vetorial", "Somar", "Subtrair", "Norma", "Ângulo", "Escalar 2D", "Somar 2D", "Subtrair 2D", "Norma 2D", "Ângulo 2D"],
+        "Vetor": ["Escalar", "Vetorial", "Somar", "Subtrair", "Norma", "Ângulo", "Escalar 2D", "Somar 2D", "Subtrair 2D", "Norma 2D", "Ângulo 2D", "Unitário", "Escalar por número", "Unitário 2D", "Escalar por número 2D"],
         "Estatística": ["1 variável", "Linear", "Quadrática", "Logarítmica", "Exponencial", "Potência", "Inversa"],
         "Tabela": ["Uma função", "Duas funções"],
         "DMS": ["Decimal → DMS", "DMS → decimal"],
         "Distribuição": ["Normal CDF", "Normal PDF", "Normal inversa", "Binomial PDF", "Binomial CDF", "Poisson PDF", "Poisson CDF"],
         "Equação": ["Grau 2", "Grau 3", "Grau 4", "Sistema 2×2", "Sistema 3×3", "Sistema 4×4"],
-        "Desigualdade": [">=", ">", "<=", "<"], "Proporção": ["D", "C"]
+        "Desigualdade": [">=", ">", "<=", "<", "Grau 3 >=", "Grau 3 >", "Grau 3 <=", "Grau 3 <", "Grau 4 >=", "Grau 4 >", "Grau 4 <=", "Grau 4 <"], "Proporção": ["D", "C"]
     ]
     private let sheetKey = "fx991lax.ios.sheet.v1"
     private let angleKey = "fx991lax.ios.angle.v1"
@@ -129,6 +129,17 @@ private enum Engine {
     private var storePending = false
     private var recallPending = false
     private var completed = false
+    private struct EditSnapshot { let expression: String; let cursor: Int; let result: String; let completed: Bool; let exact: String?; let decimal: String; let showExact: Bool }
+    private var editSnapshot: EditSnapshot?
+    private func rememberEdit() {
+        editSnapshot = EditSnapshot(expression:expression,cursor:cursor,result:result,completed:completed,exact:lastExact,decimal:lastDecimal,showExact:showExact)
+    }
+    private func swapEdit() {
+        guard let previous = editSnapshot else { status = "NADA PARA DESFAZER"; return }
+        rememberEdit()
+        expression = previous.expression; cursor = previous.cursor; result = previous.result; completed = previous.completed
+        lastExact = previous.exact; lastDecimal = previous.decimal; showExact = previous.showExact; status = "CALCULAR"
+    }
     private var lastExact: String?
     private var lastDecimal = "0"
     private var showExact = false
@@ -193,6 +204,7 @@ private enum Engine {
         if shift && ["toggle", "9", "del", "clear", "optn"].contains(action) {
             status = "FUNÇÃO SHIFT NÃO DISPONÍVEL"; return
         }
+        if alt && action == "del" { swapEdit(); return }
         if alt && action == "calc" { insert("="); return }
         if alt && variableKeys[action] == nil { status = "FUNÇÃO ALPHA NÃO DISPONÍVEL"; return }
         if (alt || storePending || recallPending), let name = variableKeys[action] {
@@ -203,8 +215,8 @@ private enum Engine {
         }
         switch action {
         case "menu": if shift { setupPage = "root"; setupVisible = true } else { menuIndex = 0; menuVisible = true }
-        case "clear": expression = ""; cursor = 0; result = "0"; completed = false; generation += 1; calculating = false
-        case "del": if cursor > 0 { let end = expression.index(expression.startIndex, offsetBy: cursor); let start = expression.index(before: end); expression.removeSubrange(start..<end); cursor -= 1 }; completed = false
+        case "clear": rememberEdit(); expression = ""; cursor = 0; result = "0"; completed = false; generation += 1; calculating = false
+        case "del": if cursor > 0 { rememberEdit(); let end = expression.index(expression.startIndex, offsetBy: cursor); let start = expression.index(before: end); expression.removeSubrange(start..<end); cursor -= 1 }; completed = false
         case "equals": evaluate()
         case "store": storePending = !shift; recallPending = shift; status = shift ? "RECALL" : "STO"
         case "memory": memory += shift ? -ans : ans; variables["M"] = memory; status = "M = \(memory)"
@@ -290,6 +302,10 @@ private enum Engine {
         ]
         guard var names = labels[name] else { status = "AINDA NÃO DISPONÍVEL"; return }
         let selected = operation ?? draft?.operation ?? Self.operations[name]?.first ?? ""
+        if name == "Complexos" && selected == "Retangular → polar" { names = ["z"] }
+        if name == "Complexos" && selected == "Polar → retangular" { names = ["r", "θ"] }
+        if name == "Desigualdade" && selected.hasPrefix("Grau 3") { names = ["a", "b", "c", "d"] }
+        if name == "Desigualdade" && selected.hasPrefix("Grau 4") { names = ["a", "b", "c", "d", "e"] }
         if name == "Estatística" && selected != "1 variável" { names = ["x₁", "y₁", "x₂", "y₂", "x₃", "y₃"] }
         if name == "Tabela" && selected == "Duas funções" { names = ["f(x)", "g(x)", "Início", "Fim", "Passo"] }
         if name == "DMS" && selected == "DMS → decimal" { names = ["Graus", "Minutos", "Segundos"] }
@@ -304,7 +320,8 @@ private enum Engine {
         if name == "Vetor" {
             let dimension = selected.hasSuffix("2D") ? 2 : 3
             names = (1...dimension).map { "A\($0)" }
-            if !selected.hasPrefix("Norma") { names += (1...dimension).map { "B\($0)" } }
+            if selected.hasPrefix("Escalar por número") { names.append("k") }
+            else if !selected.hasPrefix("Norma") && !selected.hasPrefix("Unitário") { names += (1...dimension).map { "B\($0)" } }
         }
         if name == "Distribuição" && selected.hasPrefix("Binomial") { names = ["x", "n", "p"] }
         if name == "Distribuição" && selected.hasPrefix("Poisson") { names = ["x", "λ"] }
@@ -463,6 +480,7 @@ private enum Engine {
         cursor = direction == "up" ? fraction.1 : fraction.2
     }
     private func insert(_ text: String) {
+        rememberEdit()
         if completed { expression = ["+", "-", "*", "/", "^"].contains(text) ? "Ans" : ""; cursor = expression.count; completed = false }
         cursor = max(0, min(cursor, expression.count))
         let at = expression.index(expression.startIndex, offsetBy: cursor)
@@ -493,7 +511,7 @@ private enum Engine {
         generation += 1; expression = ""; cursor = 0; result = "0"; angle = "DEG"; shifted = false; alpha = false
         ans = 0; memory = 0; displayFormat = "NORM"; displayDigits = 1; pendingFormat = "NORM"; setupPage = "root"; for name in variables.keys { variables[name] = 0 }
         storePending = false; recallPending = false; completed = false; lastExact = nil; lastDecimal = "0"
-        showExact = false; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
+        showExact = false; editSnapshot = nil; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
         advancedMode = nil; advancedFields = []; advancedLabels = []; advancedIndex = 0; advancedCursor = 0; advancedResult = ""; advancedNumeric = nil; advancedOperation = ""; operationsOpen = false; operationIndex = 0
         mainOptionsOpen = false; sheetGrid = false; sheetColumn = 0; sheetRow = 1; sheetCells = [:]
         modeDrafts.removeAll(); catalogKind = nil; catalogItems = []; catalogIndex = 0; sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey); UserDefaults.standard.removeObject(forKey:formatKey); UserDefaults.standard.removeObject(forKey:digitsKey)

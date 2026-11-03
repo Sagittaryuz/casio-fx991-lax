@@ -55,6 +55,41 @@ struct NaturalLine: View {
                 render(Array(chars[(cut+1)...]),start:start + cut + 1,size:size * 0.65)
             }.fixedSize())
         }
+        // Two-argument templates use a semicolon in the native editor; only split
+        // at the outer level so nested expressions retain their source offsets.
+        for (prefix, isRoot) in [("nthroot(", true), ("logbase(", false)] {
+            let prefixCount = prefix.count
+            guard chars.count > prefixCount + 1, String(chars.prefix(prefixCount)) == prefix, chars.last == ")" else { continue }
+            var level = 0, separator: Int?
+            for i in prefixCount..<(chars.count - 1) {
+                if chars[i] == "(" { level += 1 }
+                else if chars[i] == ")" { level -= 1 }
+                else if chars[i] == ";" && level == 0 { separator = i; break }
+            }
+            guard let split = separator else { continue }
+            let first = Array(chars[prefixCount..<split]), second = Array(chars[(split + 1)..<(chars.count - 1)])
+            return AnyView(HStack(alignment:.bottom,spacing:0) {
+                if isRoot {
+                    render(first,start:start + prefixCount,size:size * 0.55).offset(y:-size * 0.35)
+                    leaf(["√"],start:start + prefixCount - 1,size:size)
+                    VStack(spacing:0) { Rectangle().frame(height:1); render(second,start:start + split + 1,size:size * 0.85) }
+                } else {
+                    leaf(Array("log"),start:start,size:size)
+                    render(first,start:start + prefixCount,size:size * 0.6).offset(y:size * 0.2)
+                    leaf(["("],start:start + split,size:size)
+                    render(second,start:start + split + 1,size:size)
+                    leaf([")"],start:start + chars.count - 1,size:size)
+                }
+            }.fixedSize())
+        }
+        if chars.count >= 6, String(chars.prefix(5)) == "cbrt(", chars.last == ")" {
+            let inner = Array(chars.dropFirst(5).dropLast())
+            return AnyView(HStack(alignment:.bottom,spacing:0) {
+                Text("3").font(.system(size:size * 0.55)).offset(y:-size * 0.35).accessibilityHidden(true)
+                leaf(["√"],start:start + 4,size:size)
+                VStack(spacing:0) { Rectangle().frame(height:1); render(inner,start:start + 5,size:size * 0.85) }
+            }.fixedSize())
+        }
         if chars.count >= 6, String(chars.prefix(5)) == "sqrt(", chars.last == ")" {
             let inner = Array(chars.dropFirst(5).dropLast())
             return AnyView(HStack(alignment:.bottom,spacing:0) {
