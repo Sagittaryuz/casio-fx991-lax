@@ -30,3 +30,5 @@ Setas cima/baixo também navegam pelos campos de número misto, raiz de índice 
 A tecla de raiz cria o par de parênteses para entrada imediata, inclusive raízes aninhadas; a tecla de fechar avança sobre um fechamento já presente. A alternância de unidade angular persiste como a alteração pelo SETUP.
 
 Em Estatística, OPTN permite selecionar “1 variável com frequência”. Cada linha recebe x e frequência inteira não negativa; ao menos uma frequência deve ser positiva. As regressões ainda não aceitam frequência.
+
+Uma captura de simulador anterior exibiu grandes faixas pretas e corte na última linha. Foi adicionada a chave UILaunchScreen e delimitada a área da calculadora; a correção exige verificação visual da captura do novo commit.

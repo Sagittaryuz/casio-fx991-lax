@@ -47,6 +47,7 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           APP=$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/Build/Products/Debug-iphonesimulator/FX991.app' -type d -print -quit)
           test -n "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :UILaunchScreen' "$APP/Info.plist" > /dev/null
           xcrun simctl install "$DEVICE" "$APP"
           xcrun simctl launch "$DEVICE" dev.sagittaryuz.fx991lax --native-selftest
           CONTAINER=$(xcrun simctl get_app_container "$DEVICE" dev.sagittaryuz.fx991lax data)

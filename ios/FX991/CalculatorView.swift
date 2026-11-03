@@ -46,8 +46,8 @@ struct CalculatorView: View {
                         }
                         ForEach(Array(numerical.enumerated()), id: \.offset) { _, row in keyRow(row, numeric: true) }
                     }.padding(.horizontal, width * 0.045).padding(.bottom, max(10, geometry.safeAreaInsets.bottom))
-                }
-            }.background(Color.black).ignoresSafeArea(edges: .bottom)
+                }.frame(width:width,height:height,alignment:.top)
+            }.frame(width:width,height:height,alignment:.top).background(Color.black).ignoresSafeArea(edges: .bottom)
         }.preferredColorScheme(.dark)
     }
     private var display: some View {
