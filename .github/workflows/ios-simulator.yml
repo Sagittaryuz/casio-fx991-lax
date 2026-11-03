@@ -2,7 +2,7 @@ name: iOS simulator build
 on:
   push:
     branches: ['ios/swiftui']
-    paths: ['ios/**', '.github/workflows/ios-simulator.yml']
+    paths: ['ios/**', '!ios/README.md', '!ios/INSTALACAO.md', '!ios/PARIDADE.md']
   workflow_dispatch:
 permissions:
   contents: read
@@ -46,3 +46,22 @@ jobs:
         with:
           name: fx991-ios-simulator
           path: /tmp/fx991-ios.png
+      - name: Build unsigned iPhone package
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/fx991-device" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/fx991-device/Build/Products/Release-iphoneos/FX991.app"
+          test -d "$APP"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = 'dev.sagittaryuz.fx991lax'
+          xcrun lipo "$APP/FX991" -verify_arch arm64
+          mkdir -p "$RUNNER_TEMP/fx991-package/Payload"
+          ditto "$APP" "$RUNNER_TEMP/fx991-package/Payload/FX991.app"
+          (cd "$RUNNER_TEMP/fx991-package" && zip -qry "$RUNNER_TEMP/FX991-unsigned.ipa" Payload)
+          unzip -t "$RUNNER_TEMP/FX991-unsigned.ipa"
+      - name: Upload unsigned iPhone package
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FX991-unsigned-iphone
+          path: ${{ runner.temp }}/FX991-unsigned.ipa
+          retention-days: 7
