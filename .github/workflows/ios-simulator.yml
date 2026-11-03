@@ -27,7 +27,7 @@ jobs:
           APP="$RUNNER_TEMP/fx991-device/Build/Products/Release-iphoneos/FX991.app"
           test -d "$APP"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = 'dev.sagittaryuz.fx991lax'
-          xcrun lipo -verify_arch arm64 "$APP/FX991"
+          xcrun lipo "$APP/FX991" -verify_arch arm64
           mkdir -p "$RUNNER_TEMP/fx991-package/Payload"
           ditto "$APP" "$RUNNER_TEMP/fx991-package/Payload/FX991.app"
           (cd "$RUNNER_TEMP/fx991-package" && zip -qry "$RUNNER_TEMP/FX991-unsigned.ipa" Payload)
