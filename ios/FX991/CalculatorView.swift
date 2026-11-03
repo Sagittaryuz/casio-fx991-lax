@@ -65,7 +65,7 @@ struct CalculatorView: View {
                     else {
                         VStack(alignment:.leading, spacing: 0) {
                             HStack { Text(model.angle == "DEG" ? "D" : model.angle == "RAD" ? "R" : "G"); Text(model.shifted ? "S" : model.alpha ? "A" : ""); Spacer(); Text(model.status).lineLimit(1) }.font(.system(size: 8, weight:.bold, design:.monospaced))
-                            ScrollView(.horizontal, showsIndicators:false) { NaturalLine(text:model.expression,size:24,cursor:model.cursor).fixedSize() }
+                            ScrollView(.horizontal, showsIndicators:false) { NaturalLine(text:model.expression,size:24,cursor:model.cursor,onSelect:model.selectExpressionCursor).fixedSize() }
                             Spacer(minLength: 0)
                             HStack { Spacer(minLength:0); NaturalLine(text:model.result,size:min(36,proxy.size.width * 0.72 / CGFloat(max(1,model.result.count)) / 0.65)).accessibilityIdentifier("result") }
                         }.padding(5).foregroundStyle(Color(red:0.05,green:0.1,blue:0.08))

@@ -64,6 +64,14 @@ import Foundation
         for key in ["menu", "4", "1", "3", "left", "2"] { calculator.press(key) }
         if calculator.advancedFields.first != "123" { failures.append("Advanced field insertion failed") }
         calculator.press("on")
+        for key in ["1", "3"] { calculator.press(key) }
+        calculator.selectExpressionCursor(1); calculator.press("2"); calculator.press("equals")
+        await waitForResult()
+        if calculator.result != "123" { failures.append("Expression cursor insertion failed: \(calculator.result)") }
+        calculator.selectExpressionCursor(0); calculator.press("4"); calculator.press("equals")
+        await waitForResult()
+        if calculator.result != "4123" { failures.append("Expression editing after result failed: \(calculator.result)") }
+        calculator.press("on")
         for key in ["optn", "1", "1", "0", "0", "down", "1", "2", "5", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.advancedResult != "25" { failures.append("Delta percent expected 25, got \(calculator.advancedResult)") }

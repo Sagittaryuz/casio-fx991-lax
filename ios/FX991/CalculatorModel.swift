@@ -442,6 +442,11 @@ private enum Engine {
         advancedFields = [address, sheetCells[address] ?? ""]
         advancedIndex = 1; advancedCursor = advancedFields[1].count; advancedResult = ""; advancedNumeric = nil; sheetGrid = false
     }
+    func selectExpressionCursor(_ position: Int) {
+        generation += 1; calculating = false
+        cursor = min(max(0,position),expression.count)
+        completed = false; status = "CALCULAR"
+    }
     private func moveFraction(direction: String) {
         let chars = Array(expression), length = chars.count
         var stack = [Int](), pairs = [Int: Int]()
