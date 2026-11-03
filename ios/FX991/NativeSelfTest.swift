@@ -39,6 +39,14 @@ import Foundation
         for key in ["shift", "7", "down", "down", "equals"] { calculator.press(key) }
         if !calculator.expression.contains("299792458") { failures.append("CONST did not insert c₀: \(calculator.expression)") }
         calculator.press("on")
+        for key in ["2", "+", "3", "left", "shift", "7", "down", "down", "equals"] { calculator.press(key) }
+        if !calculator.expression.hasPrefix("2+299792458") || !calculator.expression.hasSuffix("*3") { failures.append("CONST insertion after operator failed: \(calculator.expression)") }
+        calculator.press("equals"); await waitForResult()
+        if calculator.result != "899377376" { failures.append("CONST insertion calculation failed: \(calculator.result)") }
+        calculator.press("on")
+        for key in ["2", "3", "left", "shift", "7", "down", "down", "equals"] { calculator.press(key) }
+        if !calculator.expression.hasPrefix("2*299792458") || !calculator.expression.hasSuffix("*3") { failures.append("CONST insertion between operands failed: \(calculator.expression)") }
+        calculator.press("on")
         for key in ["shift", "8", "equals", "5", "0", "0", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.advancedResult != "1270" { failures.append("500 in → cm expected 1270, got \(calculator.advancedResult)") }

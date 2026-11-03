@@ -275,9 +275,13 @@ private enum Engine {
         guard let kind = catalogKind, catalogItems.indices.contains(index) else { return }
         let item = catalogItems[index]; catalogKind = nil
         if kind == "CONST", let value = item.value {
-            let prior = expression.last
-            let needsMultiply = !completed && prior.map { $0.isNumber || $0 == ")" || $0.isLetter } == true
-            insert((needsMultiply ? "*" : "") + String(value))
+            let chars = Array(expression)
+            let position = max(0,min(cursor,chars.count))
+            let before: Character? = !completed && position > 0 ? chars[position - 1] : nil
+            let after: Character? = !completed && position < chars.count ? chars[position] : nil
+            let needsLeft = before.map { $0.isNumber || $0 == ")" || $0 == "%" || $0.isLetter } == true
+            let needsRight = after.map { $0.isNumber || $0 == "(" || $0.isLetter } == true
+            insert((needsLeft ? "*" : "") + String(value) + (needsRight ? "*" : ""))
         } else if kind == "CONV" {
             openAdvanced("CONV",operation:item.id)
             advancedFields[0] = completed ? String(ans) : expression
