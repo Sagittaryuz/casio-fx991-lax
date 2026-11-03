@@ -66,6 +66,52 @@ private struct MathKeyGlyph: View {
         }.accessibilityHidden(true)
     }
 }
+private struct KeyAnchors: PreferenceKey {
+    static var defaultValue: [String:Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String:Anchor<CGRect>],nextValue: () -> [String:Anchor<CGRect>]) {
+        value.merge(nextValue(),uniquingKeysWith:{ _, new in new })
+    }
+}
+
+/// Redrawn from the menu vectors and mode order already used by the web app.
+private struct MenuGlyph: View {
+    let index: Int
+    let ink: Color
+    var body: some View {
+        Canvas { ctx,size in
+            let scale = min(size.width / 30,size.height / 21) * 0.88
+            ctx.translateBy(x:(size.width - 30 * scale) / 2,y:(size.height - 21 * scale) / 2)
+            ctx.scaleBy(x:scale,y:scale)
+            var p = Path()
+            func line(_ points:[CGPoint]) { guard let first = points.first else { return }; p.move(to:first); for pt in points.dropFirst() { p.addLine(to:pt) } }
+            func box(_ x:CGFloat,_ y:CGFloat,_ w:CGFloat,_ h:CGFloat) { p.addRect(CGRect(x:x,y:y,width:w,height:h)) }
+            func txt(_ text:String,_ x:CGFloat,_ y:CGFloat) { ctx.draw(Text(text).font(.system(size:8,weight:.bold,design:.monospaced)).foregroundColor(ink),at:CGPoint(x:x,y:y),anchor:.topLeading) }
+            switch index {
+            case 0:
+                line([CGPoint(x:4,y:4),CGPoint(x:9,y:9)]); line([CGPoint(x:9,y:4),CGPoint(x:4,y:9)])
+                line([CGPoint(x:15,y:6),CGPoint(x:23,y:6)]); line([CGPoint(x:4,y:15),CGPoint(x:10,y:15)]); line([CGPoint(x:7,y:12),CGPoint(x:7,y:18)]); line([CGPoint(x:15,y:15),CGPoint(x:23,y:15)])
+            case 1: box(4,3,10,14); txt("i",7,6); line([CGPoint(x:17,y:15),CGPoint(x:25,y:5),CGPoint(x:25,y:15),CGPoint(x:17,y:15)])
+            case 2: txt("2 8",3,1); txt("10 16",1,11)
+            case 3:
+                line([CGPoint(x:5,y:2),CGPoint(x:2,y:2),CGPoint(x:2,y:18),CGPoint(x:5,y:18)]); line([CGPoint(x:25,y:2),CGPoint(x:28,y:2),CGPoint(x:28,y:18),CGPoint(x:25,y:18)])
+                for y in [4,12] { for x in [8,17] { box(CGFloat(x),CGFloat(y),5,5) } }
+            case 4:
+                line([CGPoint(x:4,y:17),CGPoint(x:24,y:17),CGPoint(x:20,y:13)]);line([CGPoint(x:24,y:17),CGPoint(x:20,y:20)]);line([CGPoint(x:4,y:17),CGPoint(x:4,y:3),CGPoint(x:1,y:7)]);line([CGPoint(x:4,y:3),CGPoint(x:7,y:7)]);line([CGPoint(x:4,y:17),CGPoint(x:20,y:3),CGPoint(x:15,y:3)]);line([CGPoint(x:20,y:3),CGPoint(x:20,y:8)])
+            case 5: line([CGPoint(x:3,y:2),CGPoint(x:3,y:18),CGPoint(x:26,y:18)]);box(7,14,4,4);box(13,7,4,11);box(19,11,4,7)
+            case 6:
+                line([CGPoint(x:2,y:18),CGPoint(x:27,y:18)]);p.move(to:CGPoint(x:5,y:17));p.addCurve(to:CGPoint(x:25,y:17),control1:CGPoint(x:10,y:-1),control2:CGPoint(x:20,y:-1));line([CGPoint(x:15,y:2),CGPoint(x:15,y:18)])
+            case 7,8:
+                box(3,2,24,17);line([CGPoint(x:3,y:7),CGPoint(x:27,y:7)]);line([CGPoint(x:3,y:12),CGPoint(x:27,y:12)]);line([CGPoint(x:3,y:16),CGPoint(x:27,y:16)]);line([CGPoint(x:15,y:2),CGPoint(x:15,y:19)])
+                if index == 7 { line([CGPoint(x:9,y:2),CGPoint(x:9,y:19)]);line([CGPoint(x:22,y:2),CGPoint(x:22,y:19)]) }
+            case 9: txt("x y",3,0);txt("= 0",4,10)
+            case 10: txt("x y",3,0);txt("> 0",4,10)
+            case 11: box(3,5,8,10);box(19,5,8,10);line([CGPoint(x:15,y:7),CGPoint(x:15,y:9)]);line([CGPoint(x:15,y:12),CGPoint(x:15,y:14)])
+            default: break
+            }
+            ctx.stroke(p,with:.color(ink),lineWidth:1.6)
+        }.accessibilityHidden(true)
+    }
+}
 private let scientific: [[Key]] = [
     [Key(title:"OPTN",action:"optn",secondary:"QR"),Key(title:"CALC",action:"calc",secondary:"SOLVE"),Key(title:"∫",action:"integral",secondary:"d/dx"),Key(title:"x",action:"variableX",secondary:"Σ")],
     [Key(title:"□⁄□",action:"fraction",secondary:"a b/c"),Key(title:"√□",action:"sqrt",secondary:"∛"),Key(title:"x²",action:"square",secondary:"x³"),Key(title:"x□",action:"power",secondary:"□√"),Key(title:"log□",action:"log",secondary:"10ˣ"),Key(title:"ln",action:"ln",secondary:"eˣ")],
@@ -106,8 +152,22 @@ struct CalculatorView: View {
                         ForEach(Array(numerical.enumerated()), id: \.offset) { _, row in keyRow(row, numeric: true) }
                     }.padding(.horizontal, width * 0.045).padding(.bottom, max(10, geometry.safeAreaInsets.bottom))
                 }.frame(width:width,height:height,alignment:.top)
+                .overlayPreferenceValue(KeyAnchors.self) { anchors in
+                    GeometryReader { p in
+                        if let upper = anchors["shift"], let lower = anchors["optn"] {
+                            let center = (p[upper].midY + p[lower].midY) / 2
+                            direction.frame(width:width * 0.91 * 0.31,height:width * 0.91 * 0.20)
+                                .position(x:width / 2,y:center)
+                        }
+                    }
+                }
             }.frame(width:width,height:height,alignment:.top).background(Color.black).ignoresSafeArea(edges: .bottom)
         }.preferredColorScheme(.dark)
+        .onAppear {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--screenshot-menu") { model.press("menu") }
+            #endif
+        }
     }
     private var display: some View {
         GeometryReader { proxy in
@@ -241,11 +301,30 @@ struct CalculatorView: View {
     }
     private var menu: some View {
         let start = model.menuIndex >= 8 ? 4 : 0
-        return ScrollView { LazyVGrid(columns:Array(repeating:GridItem(.flexible(),spacing:2),count:4),spacing:2) {
-            ForEach(Array(modes.enumerated()).filter { $0.offset >= start && $0.offset < start + 8 }, id: \.offset) { index, name in
-                Button { model.selectMode(name) } label: { VStack(spacing:2) { Text("\(index+1)").font(.system(size:14,weight:.bold));Text(name).font(.system(size:9,weight:.bold)).lineLimit(1).minimumScaleFactor(0.6) }.frame(maxWidth:.infinity,minHeight:27).background(index == model.menuIndex ? Color.black.opacity(0.28) : Color.black.opacity(0.08)) }.buttonStyle(.plain)
-            }
-        }}.foregroundStyle(.black).padding(3).accessibilityIdentifier("modes")
+        let shortcut = Array("123456789ABC")
+        return GeometryReader { p in
+            VStack(alignment:.leading,spacing:2) {
+                LazyVGrid(columns:Array(repeating:GridItem(.flexible(),spacing:2),count:4),spacing:1) {
+                    ForEach(start..<(start + 8),id: \.self) { index in
+                        let selected = index == model.menuIndex
+                        let ink: Color = selected ? .white : .black
+                        Button { model.selectMode(modes[index]) } label: {
+                            ZStack(alignment:.bottomTrailing) {
+                                MenuGlyph(index:index,ink:ink).padding(.horizontal,5)
+                                Text(String(shortcut[index])).font(.system(size:8,weight:.bold,design:.monospaced)).padding(.horizontal,2)
+                                    .foregroundStyle(selected ? Color.black : Color.white).background(selected ? Color.white : Color.black)
+                            }.frame(maxWidth:.infinity).frame(height:max(10,p.size.height * 0.33))
+                                .foregroundStyle(ink).background(selected ? Color.black : Color.clear)
+                                .overlay(alignment:.bottom) { Rectangle().frame(height:0.5).foregroundStyle(.black) }
+                        }.buttonStyle(.plain).accessibilityLabel("\(shortcut[index]): \(modes[index])")
+                    }
+                }
+                HStack(spacing:3) {
+                    Text("\(shortcut[model.menuIndex]):\(modes[model.menuIndex])").lineLimit(1)
+                    Spacer(minLength:0); Text(start == 0 ? "▼" : "▲")
+                }.font(.system(size:11,weight:.bold,design:.monospaced)).foregroundStyle(.black)
+            }.padding(3)
+        }.accessibilityIdentifier("modes")
     }
     private var controls: some View {
         GeometryReader { proxy in
@@ -257,13 +336,13 @@ struct CalculatorView: View {
                 round("ON", action:"on", color:.white)
             }
             .frame(maxWidth:.infinity)
-            direction.frame(width:proxy.size.width*0.31,height:proxy.size.width*0.20).position(x:proxy.size.width/2,y:proxy.size.height*0.91)
         }
     }
     private func round(_ title:String, action:String, color:Color) -> some View {
         GeometryReader { g in
             VStack(spacing:2) { Text(title).font(.system(size:8,weight:.bold)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.5)
                 Button { model.press(action) } label: { photo("round").resizable().aspectRatio(1,contentMode:.fit) }.buttonStyle(.plain).accessibilityLabel(title).accessibilityIdentifier("key-\(action)")
+                    .anchorPreference(key:KeyAnchors.self,value:.bounds) { [action:$0] }
             }.frame(width:g.size.width)
         }.frame(maxWidth:.infinity)
     }
@@ -296,6 +375,7 @@ struct CalculatorView: View {
                 }.frame(maxWidth:.infinity,maxHeight:.infinity)
                     .background(LinearGradient(colors:key.blue ? [.blue,Color(red:0,green:0.18,blue:0.5)] : numeric ? [.white,Color(white:0.78)] : [Color(white:0.32),Color(white:0.09)],startPoint:.top,endPoint:.bottom),in:KeyOutline(action:key.action))
             }.buttonStyle(.plain).accessibilityLabel(key.title).accessibilityIdentifier("key-\(key.action)")
+                .anchorPreference(key:KeyAnchors.self,value:.bounds) { [key.action:$0] }
         }.frame(maxWidth:.infinity,maxHeight:.infinity)
     }
     private func photo(_ name:String) -> Image {

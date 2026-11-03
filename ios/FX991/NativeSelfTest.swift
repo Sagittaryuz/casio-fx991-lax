@@ -158,6 +158,15 @@ import Foundation
         for key in ["menu", "4", "menu", "6"] { calculator.press(key) }
         if calculator.advancedOperation != "1 variável com frequência" || Array(calculator.advancedFields.prefix(4)) != ["2", "3", "5", "2"] { failures.append("Frequency rows were not restored") }
         calculator.press("on")
+        calculator.press("on"); calculator.press("menu"); calculator.press("down"); calculator.press("down")
+        if calculator.menuIndex != 8 { failures.append("Menu second window navigation failed") }
+        calculator.press("alpha"); calculator.press("negative")
+        if calculator.advancedMode != "Equação" { failures.append("Menu shortcut A failed") }
+        calculator.press("menu"); calculator.press("alpha"); calculator.press("dms")
+        if calculator.advancedMode != "Desigualdade" { failures.append("Menu shortcut B failed") }
+        calculator.press("menu"); calculator.press("alpha"); calculator.press("inverse")
+        if calculator.advancedMode != "Proporção" { failures.append("Menu shortcut C failed") }
+        calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
            let directory = FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first {

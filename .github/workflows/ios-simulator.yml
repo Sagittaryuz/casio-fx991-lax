@@ -40,12 +40,17 @@ jobs:
           python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["passed"] else 1)' "$CONTAINER/Documents/native-selftest.json"
           xcrun simctl terminate "$DEVICE" dev.sagittaryuz.fx991lax
           xcrun simctl launch "$DEVICE" dev.sagittaryuz.fx991lax
-          xcrun simctl io "$DEVICE" screenshot /tmp/fx991-ios.png
+          mkdir -p /tmp/fx991-sim-shots
+          xcrun simctl io "$DEVICE" screenshot /tmp/fx991-sim-shots/calcular.png
+          xcrun simctl terminate "$DEVICE" dev.sagittaryuz.fx991lax
+          xcrun simctl launch "$DEVICE" dev.sagittaryuz.fx991lax --screenshot-menu
+          sleep 2
+          xcrun simctl io "$DEVICE" screenshot /tmp/fx991-sim-shots/menu.png
       - name: Save simulator screenshot
         uses: actions/upload-artifact@v4
         with:
           name: fx991-ios-simulator
-          path: /tmp/fx991-ios.png
+          path: /tmp/fx991-sim-shots
       - name: Build unsigned iPhone package
         if: github.event_name == 'workflow_dispatch'
         run: |
