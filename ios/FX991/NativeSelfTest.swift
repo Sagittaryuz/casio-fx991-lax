@@ -95,6 +95,18 @@ import Foundation
         calculator.press("equals")
         if calculator.advancedFields != ["B2", "42"] { failures.append("Grid B2 did not restore") }
         calculator.press("on")
+        for key in ["shift", "fraction", "1", "down", "1", "down", "2", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "3/2" { failures.append("Mixed number navigation failed: \(calculator.result)") }
+        calculator.press("on")
+        for key in ["shift", "power", "3", "down", "2", "7", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "3" { failures.append("Indexed root navigation failed: \(calculator.result)") }
+        calculator.press("on")
+        for key in ["shift", "negative", "2", "down", "8", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "3" { failures.append("Log base navigation failed: \(calculator.result)") }
+        calculator.press("on")
         for key in ["1", "2", "3", "alpha", "del"] { calculator.press(key) }
         if calculator.expression != "12" { failures.append("Undo failed: \(calculator.expression)") }
         calculator.press("alpha"); calculator.press("del")

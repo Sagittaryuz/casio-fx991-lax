@@ -24,3 +24,5 @@ OPTN no cálculo principal oferece Δ% = (final − inicial) / inicial × 100; i
 O visor estrutura frações e números mistos, raízes quadradas/cúbicas/de índice, logaritmos com base e expoentes comuns, inclusive em expressões aninhadas. Toque antes de um símbolo ou no fim de um trecho para posicionar o cursor; operadores estruturais ocultos e expressões mais complexas podem exigir as setas. A representação de todas as construções do aparelho continua pendente.
 
 Na grade da planilha, OPTN abre Copiar ou Preencher; a origem é a célula selecionada e o destino deve ser informado. Preencher exige destino abaixo e à direita da origem; fórmulas preservam referências absolutas e ajustam as relativas. MENU cancela e retorna à grade. Erros não salvam uma alteração parcial.
+
+Setas cima/baixo também navegam pelos campos de número misto, raiz de índice e logaritmo com base. Expressões arbitrárias e todas as regras do editor físico continuam pendentes.

@@ -505,8 +505,33 @@ private enum Engine {
                   let denominatorEnd = pairs[end + 2], cursor >= start, cursor <= denominatorEnd + 1 else { return nil }
             return (start, end, denominatorEnd)
         }.sorted { ($0.2 - $0.0) < ($1.2 - $1.0) }
-        guard let fraction = candidates.first(where: { direction == "up" ? cursor >= $0.1 + 2 : cursor <= $0.1 + 1 }) else { status = "SEM FRAÇÃO SELECIONADA"; return }
-        cursor = direction == "up" ? fraction.1 : fraction.2
+        if let fraction = candidates.first(where: { direction == "up" ? cursor >= $0.1 + 2 : cursor <= $0.1 + 1 }) {
+            cursor = direction == "up" ? fraction.1 : fraction.2; return
+        }
+        // Locate the innermost structured template and its top-level arguments.
+        let templates = pairs.compactMap { open, close -> (Int, Int, [Int])? in
+            guard cursor >= open + 1, cursor <= close else { return nil }
+            let prefix = String(chars[..<open])
+            guard prefix.hasSuffix("mix") || prefix.hasSuffix("nthroot") || prefix.hasSuffix("logbase") else { return nil }
+            var separators: [Int] = [], depth = 0
+            if open + 1 < close {
+                for i in (open + 1)..<close {
+                    if chars[i] == "(" { depth += 1 }
+                    else if chars[i] == ")" { depth -= 1 }
+                    else if chars[i] == ";" && depth == 0 { separators.append(i) }
+                }
+            }
+            guard !separators.isEmpty else { return nil }
+            return (open, close, separators)
+        }.sorted { ($0.1 - $0.0) < ($1.1 - $1.0) }
+        for (open, close, separators) in templates {
+            let starts = [open + 1] + separators.map { $0 + 1 }
+            let ends = separators + [close]
+            guard let field = starts.indices.first(where: { cursor >= starts[$0] && cursor <= ends[$0] }) else { continue }
+            let next = direction == "up" ? field - 1 : field + 1
+            if starts.indices.contains(next) { cursor = starts[next]; return }
+        }
+        status = "SEM CAMPO ADJACENTE"
     }
     private func insert(_ text: String) {
         rememberEdit()

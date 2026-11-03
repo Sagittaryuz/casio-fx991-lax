@@ -21,6 +21,23 @@ jobs:
           node --test ios/tests/*.test.mjs
       - name: Build iOS simulator (no signing)
         run: xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Build unsigned iPhone package
+        run: |
+          xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/fx991-device" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/fx991-device/Build/Products/Release-iphoneos/FX991.app"
+          test -d "$APP"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = 'dev.sagittaryuz.fx991lax'
+          xcrun lipo -verify_arch arm64 "$APP/FX991"
+          mkdir -p "$RUNNER_TEMP/fx991-package/Payload"
+          ditto "$APP" "$RUNNER_TEMP/fx991-package/Payload/FX991.app"
+          (cd "$RUNNER_TEMP/fx991-package" && zip -qry "$RUNNER_TEMP/FX991-unsigned.ipa" Payload)
+          unzip -t "$RUNNER_TEMP/FX991-unsigned.ipa"
+      - name: Upload unsigned iPhone package
+        uses: actions/upload-artifact@v4
+        with:
+          name: FX991-unsigned-iphone
+          path: ${{ runner.temp }}/FX991-unsigned.ipa
+          retention-days: 7
       - name: Launch on an available iPhone simulator
         timeout-minutes: 15
         run: |
