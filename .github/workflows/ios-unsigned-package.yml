@@ -1,0 +1,28 @@
+name: iOS unsigned device package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned iPhone package
+        run: |
+          xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/fx991-device" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/fx991-device/Build/Products/Release-iphoneos/FX991.app"
+          test -d "$APP"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = 'dev.sagittaryuz.fx991lax'
+          xcrun lipo "$APP/FX991" -verify_arch arm64
+          mkdir -p "$RUNNER_TEMP/fx991-package/Payload"
+          ditto "$APP" "$RUNNER_TEMP/fx991-package/Payload/FX991.app"
+          (cd "$RUNNER_TEMP/fx991-package" && zip -qry "$RUNNER_TEMP/FX991-unsigned.ipa" Payload)
+          unzip -t "$RUNNER_TEMP/FX991-unsigned.ipa"
+      - name: Upload unsigned iPhone package
+        uses: actions/upload-artifact@v4
+        with:
+          name: FX991-unsigned-iphone
+          path: ${{ runner.temp }}/FX991-unsigned.ipa
+          retention-days: 7
