@@ -36,6 +36,34 @@ import Foundation
         if calculator.advancedOperation != "Inversa" || calculator.advancedFields != ["1", "2", "3", "4"] { failures.append("Matrix state was not restored") }
         calculator.press("on")
         if calculator.result != "0" || calculator.advancedMode != nil || UserDefaults.standard.string(forKey:"fx991lax.ios.sheet.v1") != nil { failures.append("ON did not clear calculator state") }
+        for key in ["shift", "7", "down", "down", "equals"] { calculator.press(key) }
+        if !calculator.expression.contains("299792458") { failures.append("CONST did not insert c₀: \(calculator.expression)") }
+        calculator.press("on")
+        for key in ["shift", "8", "equals", "5", "0", "0", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.advancedResult != "1270" { failures.append("500 in → cm expected 1270, got \(calculator.advancedResult)") }
+        calculator.press("ans")
+        if calculator.result != "1270" || calculator.advancedMode != nil { failures.append("Conversion result was not applied") }
+        calculator.press("on")
+        for key in ["1", "2", ",", "5", "equals"] { calculator.press(key) }
+        await waitForResult()
+        calculator.press("dms"); calculator.press("equals")
+        await waitForResult()
+        if !calculator.advancedResult.contains("30′") { failures.append("DMS conversion failed: \(calculator.advancedResult)") }
+        calculator.press("on")
+        for key in ["shift", "menu", "2", "2", "3", "sin", "3", "0", ")", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "0,500" { failures.append("FIX 3 expected 0,500, got \(calculator.result)") }
+        calculator.press("on")
+        for key in ["menu", "6", "1", "down", "2", "down", "3", "down", "4", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if !calculator.advancedResult.contains("2,5") { failures.append("Statistics mean expected 2,5, got \(calculator.advancedResult)") }
+        for key in ["menu", "4", "menu", "6"] { calculator.press(key) }
+        if calculator.advancedFields != ["1", "2", "3", "4"] { failures.append("Statistics rows were not restored") }
+        calculator.press("on")
+        for key in ["menu", "4", "1", "3", "left", "2"] { calculator.press(key) }
+        if calculator.advancedFields.first != "123" { failures.append("Advanced field insertion failed") }
+        calculator.press("on")
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
         if let data = try? JSONSerialization.data(withJSONObject:output),
            let directory = FileManager.default.urls(for:.documentDirectory,in:.userDomainMask).first {

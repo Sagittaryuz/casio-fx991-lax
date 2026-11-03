@@ -57,6 +57,7 @@ struct CalculatorView: View {
                 ZStack(alignment: .topLeading) {
                     photo("lcd-surface").resizable()
                     if model.setupVisible { setup }
+                    else if model.catalogKind != nil { catalog }
                     else if model.menuVisible { menu }
                     else if model.advancedMode != nil { advanced }
                     else {
@@ -71,8 +72,28 @@ struct CalculatorView: View {
             }
         }.accessibilityElement(children: .contain)
     }
+    private var catalog: some View {
+        VStack(alignment:.leading,spacing:2) {
+            Text(model.catalogKind ?? "Catálogo").font(.system(size:10,weight:.bold))
+            ScrollViewReader { reader in
+                ScrollView(.vertical,showsIndicators:false) {
+                    VStack(alignment:.leading,spacing:1) {
+                        ForEach(Array(model.catalogItems.enumerated()),id: \.offset) { index,item in
+                            Button { model.selectCatalogItem(index) } label: {
+                                Text((item.symbol.map { $0 + " · " } ?? "") + item.label)
+                                    .font(.system(size:11,weight:.medium,design:.monospaced)).lineLimit(1)
+                                    .frame(maxWidth:.infinity,alignment:.leading)
+                                    .foregroundStyle(index == model.catalogIndex ? Color.white : Color.black)
+                                    .background(index == model.catalogIndex ? Color.black : Color.clear)
+                            }.buttonStyle(.plain).id(index)
+                        }
+                    }
+                }.onChange(of:model.catalogIndex) { index in reader.scrollTo(index,anchor:.center) }
+            }
+        }.padding(3).foregroundStyle(.black).accessibilityIdentifier("catalog")
+    }
     private var advanced: some View {
-        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular"]
+        let captions = ["Complexos":"z₁ + z₂", "Base-N":"Conversão de base", "Matriz":"Determinante 2×2", "Vetor":"Produto escalar 3D", "Estatística":"Uma variável · 3 dados", "Distribuição":"Normal acumulada", "Planilha":"Editar célula", "Tabela":"Tabela f(x)", "Equação":"ax² + bx + c = 0", "Desigualdade":"ax² + bx + c ≥ 0", "Proporção":"a:b = c:x", "Integral":"Integral definida", "Derivada":"Derivada numérica", "Somatório":"Somatório", "CALC":"Substituição x,A,B", "SOLVE":"Resolver para x", "Pol":"Retangular → polar", "Rec":"Polar → retangular", "DMS":"Graus, minutos e segundos", "FATOR":"Fatoração prima", "ENG":"Notação de engenharia", "CONV":"Conversão"]
         return VStack(alignment:.leading,spacing:2) {
             Text(model.advancedOperation.isEmpty ? (captions[model.advancedMode ?? ""] ?? "Modo") : model.advancedOperation).font(.system(size:10,weight:.bold)).lineLimit(1)
             if model.operationsOpen {
@@ -90,7 +111,7 @@ struct CalculatorView: View {
                     VStack(alignment:.leading,spacing:1) {
                         ForEach(model.advancedFields.indices,id: \.self) { i in
                             Button { model.selectAdvancedField(i) } label: {
-                                HStack(spacing:3) { Text(model.advancedLabels[i] + ":"); Text(model.advancedFields[i].isEmpty ? "□" : model.advancedFields[i]).lineLimit(1); Spacer(minLength:0) }
+                                HStack(spacing:3) { Text(model.advancedLabels[i] + ":"); Text(model.advancedFieldText(i)).lineLimit(1); Spacer(minLength:0) }
                                     .font(.system(size:12,weight:.medium,design:.monospaced)).padding(.horizontal,2)
                                     .foregroundStyle(i == model.advancedIndex ? Color.white : Color.black)
                                     .background(i == model.advancedIndex ? Color.black : Color.clear)
@@ -100,14 +121,31 @@ struct CalculatorView: View {
                 }.onChange(of:model.advancedIndex) { index in reader.scrollTo(index,anchor:.center) }
             }
             if model.status != "CALCULAR" { Text(model.status).font(.system(size:9,weight:.bold)).lineLimit(1) }
+            if model.advancedNumeric != nil { Text("Ans: usar resultado").font(.system(size:8,weight:.medium)).lineLimit(1) }
             if !model.advancedResult.isEmpty { ScrollView(.horizontal,showsIndicators:false) { Text(model.advancedResult).font(.system(size:12,weight:.bold,design:.monospaced)).lineLimit(1).accessibilityIdentifier("advanced-result") } }
             }
         }.padding(3).foregroundStyle(.black).accessibilityIdentifier("advanced-mode")
     }
     private var setup: some View {
-        HStack { ForEach(["DEG", "RAD", "GRAD"], id: \.self) { unit in
-            Button(unit) { model.setAngle(unit) }.font(.system(size:14,weight:.bold)).foregroundStyle(.black).frame(maxWidth:.infinity)
-        }}.accessibilityIdentifier("setup")
+        ScrollView(.vertical,showsIndicators:false) {
+            VStack(alignment:.leading,spacing:2) {
+                if model.setupPage == "root" {
+                    Button("1: Ângulo") { model.setupPage = "angle" }
+                    Button("2: Formato") { model.setupPage = "format" }
+                } else if model.setupPage == "angle" {
+                    ForEach(Array(["DEG", "RAD", "GRAD"].enumerated()),id: \.offset) { index,unit in
+                        Button("\(index + 1): \(unit)") { model.setAngle(unit) }
+                    }
+                } else if model.setupPage == "format" {
+                    ForEach(Array(["NORM", "FIX", "SCI"].enumerated()),id: \.offset) { index,format in
+                        Button("\(index + 1): \(format)") { model.chooseFormat(format) }
+                    }
+                } else {
+                    Text("Casas / algarismos: 0–9")
+                    HStack { ForEach(0..<10,id: \.self) { digit in Button("\(digit)") { model.setFormatDigits(digit) }.frame(maxWidth:.infinity) } }
+                }
+            }.font(.system(size:12,weight:.bold,design:.monospaced)).foregroundStyle(.black).buttonStyle(.plain).frame(maxWidth:.infinity,alignment:.leading)
+        }.padding(3).accessibilityIdentifier("setup")
     }
     private var menu: some View {
         let start = model.menuIndex >= 8 ? 4 : 0

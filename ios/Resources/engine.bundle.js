@@ -744,15 +744,173 @@ exports.Spreadsheet=Spreadsheet;
 exports.SPREADSHEET_STORAGE_KEY=SPREADSHEET_STORAGE_KEY;
 exports.loadSpreadsheet=loadSpreadsheet;
 exports.saveSpreadsheet=saveSpreadsheet;
-}};const cache={};function require(name){if(cache[name])return cache[name];if(!modules[name])throw Error('Missing module: '+name);const value={};cache[name]=value;modules[name](value,require);return value}const engine=require('engine.js'),exact=require('exact.js');globalThis.nativeCalculate=function(input){try{const expr=String(input.expression).replaceAll(',','.').replaceAll(';',',');const answer=engine.evaluate(expr,{angle:input.angle||'DEG',ans:input.ans||0,variables:input.variables||{},memory:input.memory||0});return JSON.stringify({ok:true,value:answer,decimal:engine.formatResult(answer),exact:exact.exactResult(expr)})}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}};globalThis.nativeAdvanced=function(input){try{const f=input.fields||[], num=i=>{const raw=String(f[i]??'').trim().replace(',','.');if(!raw)throw Error('Syntax ERROR');const x=Number(raw);if(!Number.isFinite(x))throw Error('Math ERROR');return x}, options={angle:input.angle||'DEG'}, m=require('modes.js'),l=require('linear.js'),st=require('statistics.js'),cal=require('calculus.js');let value,snapshot;switch(input.kind){
+},
+"catalog.js":(exports,require)=>{
+/** CONST/CONV: fx-991LA X guide (pp. 38–39,46) and NIST CODATA 2010. */
+const C = (category,id,symbol,label,value,unit='') => Object.freeze({category,id,symbol,label,value,unit});
+const CONSTANTS=Object.freeze([
+ C('Universal','h','h','Constante de Planck',6.62606957e-34,'J s'),
+ C('Universal','hbar','ℏ','Constante de Planck reduzida',1.054571726e-34,'J s'),
+ C('Universal','c0','c₀','Velocidade da luz',299792458,'m/s'),
+ C('Universal','epsilon0','ε₀','Permissividade do vácuo',1/(4e-7*Math.PI*299792458**2),'F/m'),
+ C('Universal','mu0','μ₀','Permeabilidade do vácuo',4e-7*Math.PI,'N/A²'),
+ C('Universal','Z0','Z₀','Impedância do vácuo',4e-7*Math.PI*299792458,'Ω'),
+ C('Universal','G','G','Constante gravitacional',6.67384e-11,'m³/(kg s²)'),
+ C('Universal','lP','lₚ','Comprimento de Planck',1.616199e-35,'m'),
+ C('Universal','tP','tₚ','Tempo de Planck',5.39106e-44,'s'),
+ C('Eletromagnético','muN','μN','Magneton nuclear',5.05078353e-27,'J/T'),
+ C('Eletromagnético','muB','μB','Magneton de Bohr',9.27400968e-24,'J/T'),
+ C('Eletromagnético','e','e','Carga elementar',1.602176565e-19,'C'),
+ C('Eletromagnético','phi0','Φ₀','Quantum de fluxo magnético',2.067833758e-15,'Wb'),
+ C('Eletromagnético','G0','G₀','Quantum de condutância',7.7480917346e-5,'S'),
+ C('Eletromagnético','KJ','KJ','Constante de Josephson',483597.870e9,'Hz/V'),
+ C('Eletromagnético','RK','RK','Constante de von Klitzing',25812.8074434,'Ω'),
+ C('Atômico e nuclear','mp','mₚ','Massa do próton',1.672621777e-27,'kg'),
+ C('Atômico e nuclear','mn','mₙ','Massa do nêutron',1.674927351e-27,'kg'),
+ C('Atômico e nuclear','me','mₑ','Massa do elétron',9.10938291e-31,'kg'),
+ C('Atômico e nuclear','mmu','mμ','Massa do múon',1.883531475e-28,'kg'),
+ C('Atômico e nuclear','a0','a₀','Raio de Bohr',0.52917721092e-10,'m'),
+ C('Atômico e nuclear','alpha','α','Constante de estrutura fina',7.2973525698e-3),
+ C('Atômico e nuclear','re','rₑ','Raio clássico do elétron',2.8179403267e-15,'m'),
+ C('Atômico e nuclear','lambdaC','λC','Comprimento de onda Compton',2.4263102389e-12,'m'),
+ C('Atômico e nuclear','gammap','γₚ','Razão giromagnética do próton',2.675222005e8,'s⁻¹ T⁻¹'),
+ C('Atômico e nuclear','lambdaCp','λCp','Compton do próton',1.32140985623e-15,'m'),
+ C('Atômico e nuclear','lambdaCn','λCn','Compton do nêutron',1.3195909068e-15,'m'),
+ C('Atômico e nuclear','Rinf','R∞','Constante de Rydberg',10973731.568539,'m⁻¹'),
+ C('Atômico e nuclear','mup','μₚ','Momento magnético do próton',1.410606743e-26,'J/T'),
+ C('Atômico e nuclear','mue','μₑ','Momento magnético do elétron',-9.28476430e-24,'J/T'),
+ C('Atômico e nuclear','mun','μₙ','Momento magnético do nêutron',-0.96623647e-26,'J/T'),
+ C('Atômico e nuclear','mumu','μμ','Momento magnético do múon',-4.49044807e-26,'J/T'),
+ C('Atômico e nuclear','mtau','mτ','Massa do tau',3.16747e-27,'kg'),
+ C('Físico-químico','u','u','Constante de massa atômica',1.660538921e-27,'kg'),
+ C('Físico-químico','F','F','Constante de Faraday',96485.3365,'C/mol'),
+ C('Físico-químico','NA','NA','Constante de Avogadro',6.02214129e23,'mol⁻¹'),
+ C('Físico-químico','k','k','Constante de Boltzmann',1.3806488e-23,'J/K'),
+ C('Físico-químico','Vm','Vm','Volume molar de gás ideal (100 kPa)',22.710953e-3,'m³/mol'),
+ C('Físico-químico','R','R','Constante molar dos gases',8.3144621,'J/(mol K)'),
+ C('Físico-químico','c1','c₁','Primeira constante de radiação',3.74177153e-16,'W m²'),
+ C('Físico-químico','c2','c₂','Segunda constante de radiação',1.4387770e-2,'m K'),
+ C('Físico-químico','sigma','σ','Constante de Stefan-Boltzmann',5.670373e-8,'W/(m² K⁴)'),
+ C('Valores adotados','g','g','Aceleração padrão da gravidade',9.80665,'m/s²'),
+ C('Valores adotados','atm','atm','Atmosfera padrão',101325,'Pa'),
+ C('Valores adotados','RK90','RK-90','Valor convencional de von Klitzing',25812.807,'Ω'),
+ C('Valores adotados','KJ90','KJ-90','Valor convencional de Josephson',483597.9e9,'Hz/V'),
+ C('Outros','t','t','Conversão Celsius–Kelvin',273.15,'K')
+]);
+const conversions=[];
+function pair(category,id,from,to,factor,forwardOffset=0,reverseOffset=0){
+ conversions.push(Object.freeze({category,id:id+'-forward',label:`${from} → ${to}`,from,to,factor,offset:forwardOffset}));
+ conversions.push(Object.freeze({category,id:id+'-reverse',label:`${to} → ${from}`,from:to,to:from,factor:1/factor,offset:reverseOffset}));
+}
+pair('Comprimento','in-cm','in','cm',2.54);
+pair('Comprimento','ft-m','ft','m',0.3048);
+pair('Comprimento','yd-m','yd','m',0.9144);
+pair('Comprimento','mile-km','mile','km',1.609344);
+pair('Comprimento','nmi-m','n mile','m',1852);
+// NIST SP 811 (2008), tabela B.8: valor aproximado de parsec.
+pair('Comprimento','pc-km','pc','km',3.085678e13);
+pair('Área','acre-m2','acre (survey)','m²',4046.873);
+pair('Volume','gal-us-l','gal (US)','L',3.785411784);
+pair('Volume','gal-uk-l','gal (UK)','L',4.54609);
+pair('Massa','oz-g','oz','g',28.349523125);
+pair('Massa','lb-kg','lb','kg',0.45359237);
+pair('Velocidade','kmh-ms','km/h','m/s',1/3.6);
+pair('Pressão','atm-pa','atm','Pa',101325);
+pair('Pressão','mmhg-pa','mmHg','Pa',133.3224);
+pair('Pressão','kgfcm2-pa','kgf/cm²','Pa',98066.5);
+pair('Pressão','lbf-in2-kpa','lbf/in²','kPa',6.894757293168361);
+pair('Energia','kgfm-j','kgf m','J',9.80665);
+pair('Energia','j-cal15','J','cal (15 °C)',1/4.1858);
+pair('Potência','hp-kw','hp','kW',0.7456998715822702);
+pair('Temperatura','f-c','°F','°C',5/9,-160/9,32);
+const CONVERSIONS=Object.freeze(conversions);
+function getConstant(id){const c=CONSTANTS.find(x=>x.id===String(id));if(!c)throw Error('Constante inválida');return c}
+function convert(id,value){const c=CONVERSIONS.find(x=>x.id===String(id));if(!c)throw Error('Conversão inválida');if(typeof value!=='number'||!Number.isFinite(value))throw Error('Math ERROR');const n=value*c.factor+c.offset;if(!Number.isFinite(n))throw Error('Math ERROR');return Object.is(n,-0)?0:n}
+
+exports.CONSTANTS=CONSTANTS;
+exports.CONVERSIONS=CONVERSIONS;
+exports.getConstant=getConstant;
+exports.convert=convert;
+},
+"settings.js":(exports,require)=>{
+/** Independent display settings for the scientific calculator. */
+const SETTINGS_KEY = 'fx991lax.settings.v1';
+const DEFAULT_SETTINGS = Object.freeze({ angle: 'DEG', format: 'NORM', digits: 1 });
+const angles = ['DEG','RAD','GRAD'];
+const formats = ['FIX','SCI','NORM'];
+
+function validateSettings(value) {
+  if (!value || !angles.includes(value.angle) || !formats.includes(value.format) ||
+      !Number.isInteger(value.digits) || (value.format === 'NORM' ? ![1,2].includes(value.digits) : value.digits < 0 || value.digits > 9)) {
+    throw Error('Configuração inválida');
+  }
+  return { angle:value.angle, format:value.format, digits:value.digits };
+}
+
+/** Never overwrites invalid stored data until the user explicitly saves or resets. */
+function createSettings(storage) {
+  let current = {...DEFAULT_SETTINGS}, warning = '';
+  try { if (storage===undefined) storage=globalThis.localStorage; const raw = storage?.getItem(SETTINGS_KEY); if (raw !== null && raw !== undefined) current=validateSettings(JSON.parse(raw)); }
+  catch { warning='Não foi possível ler a configuração salva.'; }
+  function write(next) {
+    current=validateSettings(next); warning='';
+    try { if (!storage) throw Error(); storage.setItem(SETTINGS_KEY,JSON.stringify(current)); }
+    catch { warning='Não foi possível salvar a configuração; ela vale apenas nesta sessão.'; }
+    return { settings:{...current}, warning };
+  }
+  return {
+    get:()=>({...current}), getWarning:()=>warning,
+    set:write, reset:()=>write({...DEFAULT_SETTINGS})
+  };
+}
+
+/** Decimal output only; exact output may be displayed separately. */
+function formatNumber(value, settings=DEFAULT_SETTINGS) {
+  const {format,digits}=validateSettings(settings);
+  if (!Number.isFinite(value)) throw Error('Math ERROR');
+  if (Object.is(value,-0)) value=0;
+  const exponent=(number,decimalPlaces)=>number.toExponential(decimalPlaces)
+    .replace(/e\+?(-?)0*(\d+)/,'×10^$1$2');
+  if (format==='SCI') return exponent(value,(digits===0?10:digits)-1);
+  if (format==='FIX') return Math.abs(value)>=1e10 ? exponent(value,9) : value.toFixed(digits);
+  const n=Math.abs(value), threshold=digits===1?1e-2:1e-9;
+  if (n!==0 && (n<threshold || n>=1e10)) return exponent(Number(value.toPrecision(10)),9).replace(/(\.\d*?)0+×/,'$1×').replace(/\.×/,'×');
+  return String(Number(value.toPrecision(10)));
+}
+
+/** Staged setup form. onResetAll is invoked only after an explicit second click. */
+function mountSetup(container, store, callbacks={}) {
+  const initial=store.get();
+  container.innerHTML='<section class="setup-ui" aria-label="Configuração"><form><label>Unidade angular <select name="angle"><option value="DEG">Graus (DEG)</option><option value="RAD">Radianos (RAD)</option><option value="GRAD">Grados (GRAD)</option></select></label><label>Formato <select name="format"><option value="NORM">Normal (NORM)</option><option value="FIX">Casas decimais (FIX)</option><option value="SCI">Algarismos significativos (SCI)</option></select></label><label><span data-digit-label>Norma</span> <select name="digits"></select></label><div><button type="submit">Aplicar</button> <button type="button" data-cancel>Cancelar</button></div><div><button type="button" data-reset>Restaurar configuração</button> <button type="button" data-reset-all>Apagar todos os dados</button></div><div data-confirm hidden><span>Apagar também dados e planilha?</span> <button type="button" data-confirm-reset>Confirmar</button> <button type="button" data-cancel-reset>Cancelar</button></div><output role="status" aria-live="polite"></output></form></section>';
+  const form=container.querySelector('form'),angle=form.elements.angle,format=form.elements.format,digits=form.elements.digits,output=form.querySelector('output'),confirm=form.querySelector('[data-confirm]');
+  angle.value=initial.angle;format.value=initial.format;
+  function setDigits(value){const norm=format.value==='NORM';digits.replaceChildren();for(const n of norm?[1,2]:[0,1,2,3,4,5,6,7,8,9]){const o=document.createElement('option');o.value=String(n);o.textContent=norm?`Norm ${n}`:String(n)+(format.value==='SCI'&&n===0?' (10 algarismos)':'');digits.append(o)}digits.value=String(value);if(digits.selectedIndex<0)digits.selectedIndex=0;form.querySelector('[data-digit-label]').textContent=norm?'Norma':format.value==='FIX'?'Casas decimais':'Algarismos significativos';}
+  setDigits(initial.digits);output.textContent=store.getWarning();
+  format.addEventListener('change',()=>setDigits(format.value==='NORM'?1:format.value==='SCI'?9:2));
+  form.addEventListener('submit',event=>{event.preventDefault();try{const result=store.set({angle:angle.value,format:format.value,digits:Number(digits.value)});output.textContent=result.warning;callbacks.onApply?.(result.settings,result.warning)}catch(e){output.textContent=e.message}});
+  form.querySelector('[data-cancel]').addEventListener('click',()=>callbacks.onCancel?.());
+  form.querySelector('[data-reset]').addEventListener('click',()=>{const result=store.reset();angle.value=result.settings.angle;format.value=result.settings.format;setDigits(result.settings.digits);output.textContent=result.warning;callbacks.onApply?.(result.settings,result.warning)});
+  const resetAll=form.querySelector('[data-reset-all]');if(!callbacks.onResetAll)resetAll.hidden=true;
+  resetAll.addEventListener('click',()=>{confirm.hidden=false;});form.querySelector('[data-cancel-reset]').addEventListener('click',()=>{confirm.hidden=true;});
+  form.querySelector('[data-confirm-reset]').addEventListener('click',()=>{try{callbacks.onResetAll?.();const result=store.reset();output.textContent=result.warning;callbacks.onApply?.(result.settings,result.warning);confirm.hidden=true}catch(e){output.textContent=e.message}});
+  return ()=>container.replaceChildren();
+}
+
+exports.SETTINGS_KEY=SETTINGS_KEY;
+exports.DEFAULT_SETTINGS=DEFAULT_SETTINGS;
+exports.validateSettings=validateSettings;
+exports.createSettings=createSettings;
+exports.formatNumber=formatNumber;
+exports.mountSetup=mountSetup;
+}};const cache={};function require(name){if(cache[name])return cache[name];if(!modules[name])throw Error('Missing module: '+name);const value={};cache[name]=value;modules[name](value,require);return value}const engine=require('engine.js'),exact=require('exact.js');globalThis.nativeCalculate=function(input){try{const expr=String(input.expression).replaceAll(',','.').replaceAll(';',',');const answer=engine.evaluate(expr,{angle:input.angle||'DEG',ans:input.ans||0,variables:input.variables||{},memory:input.memory||0});const config={angle:input.angle||'DEG',format:input.format||'NORM',digits:Number.isInteger(input.digits)?input.digits:1};const decimal=require('settings.js').formatNumber(answer,config);return JSON.stringify({ok:true,value:answer,decimal,exact:exact.exactResult(expr)})}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}};globalThis.nativeAdvanced=function(input){try{const f=input.fields||[], num=i=>{const raw=String(f[i]??'').trim().replace(',','.');if(!raw)throw Error('Syntax ERROR');const x=Number(raw);if(!Number.isFinite(x))throw Error('Math ERROR');return x}, options={angle:input.angle||'DEG'}, m=require('modes.js'),l=require('linear.js'),st=require('statistics.js'),cal=require('calculus.js');let value,snapshot;switch(input.kind){
 case 'Complexos':value=m.complexOperation(f[0],({Somar:'+',Subtrair:'-',Multiplicar:'*',Dividir:'/'})[input.operation||'Somar'],f[1]);break;
 case 'Base-N':{const op=input.operation||'Converter';value=op==='Converter'?m.baseConvert(f[0],num(1),num(2)):op==='NOT'?m.baseNot(f[0],num(1)):m.baseOperation(f[0],({Somar:'+',Subtrair:'-',Multiplicar:'*',Dividir:'/',AND:'and',OR:'or',XOR:'xor'})[op],f[1],num(2));break;}
-case 'Matriz':{const a=[[num(0),num(1)],[num(2),num(3)]],op=input.operation||'Determinante';if(op==='Determinante')value=l.determinant(a);else if(op==='Inversa')value=l.matrixInverse(a);else if(op==='Transposta')value=l.matrixTranspose(a);else {const b=[[num(4),num(5)],[num(6),num(7)]];value=op==='Somar'?l.matrixAdd(a,b):op==='Multiplicar'?l.matrixMultiply(a,b):(()=>{throw Error('Syntax ERROR')})()}break;}
-case 'Vetor':{const a=[num(0),num(1),num(2)],op=input.operation||'Escalar';if(op==='Norma')value=l.vectorNorm(a);else{const b=[num(3),num(4),num(5)];if(op==='Escalar')value=l.vectorDot(a,b);else if(op==='Vetorial')value=l.vectorCross(a,b);else if(op==='Somar')value=l.vectorAdd(a,b);else if(op==='Subtrair')value=l.vectorSubtract(a,b);else if(op==='Ângulo')value=l.vectorAngle(a,b,options.angle);else throw Error('Syntax ERROR')}break;}
-case 'Estatística':value=st.oneVariable([[num(0)],[num(1)],[num(2)]]);break;
+case 'Matriz':{const op=input.operation||'Determinante',n=op.includes('3×3')?3:op.includes('4×4')?4:2;const mat=start=>Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>num(start+r*n+c)));const a=mat(0);if(op.startsWith('Determinante'))value=l.determinant(a);else if(op.startsWith('Inversa'))value=l.matrixInverse(a);else if(op.startsWith('Transposta'))value=l.matrixTranspose(a);else {const b=mat(n*n);value=op.startsWith('Somar')?l.matrixAdd(a,b):op.startsWith('Multiplicar')?l.matrixMultiply(a,b):(()=>{throw Error('Syntax ERROR')})()}break;}
+case 'Vetor':{const op=input.operation||'Escalar',n=op.endsWith('2D')?2:3,name=op.replace(/ 2D$/,'');const a=Array.from({length:n},(_,i)=>num(i));if(name==='Norma')value=l.vectorNorm(a);else{const b=Array.from({length:n},(_,i)=>num(n+i));if(name==='Escalar')value=l.vectorDot(a,b);else if(name==='Vetorial')value=l.vectorCross(a,b);else if(name==='Somar')value=l.vectorAdd(a,b);else if(name==='Subtrair')value=l.vectorSubtract(a,b);else if(name==='Ângulo')value=l.vectorAngle(a,b,options.angle);else throw Error('Syntax ERROR')}break;}
+case 'Estatística':{const op=input.operation||'1 variável';if(op==='1 variável'){const data=f.map((raw,i)=>String(raw).trim()?[num(i)]:null).filter(Boolean);value=st.oneVariable(data)}else{const models={'Linear':'linear','Quadrática':'quadratic','Logarítmica':'logarithmic','Exponencial':'exponential','Potência':'power','Inversa':'inverse'};const model=models[op];if(!model)throw Error('Syntax ERROR');let rows=[];for(let i=0;i<f.length;i+=2){if(!String(f[i]||'').trim()&&!String(f[i+1]||'').trim())continue;rows.push([num(i),num(i+1)])}value=st.regression(rows,model)}break;}
 case 'Distribuição':{const op=input.operation||'Normal CDF';if(op==='Normal CDF')value=st.normalCDF(num(0),num(1),num(2));else if(op==='Normal PDF')value=st.normalPDF(num(0),num(1),num(2));else if(op==='Normal inversa')value=st.inverseNormal(num(0),num(1),num(2));else if(op==='Binomial PDF')value=st.binomialPDF(num(0),num(1),num(2));else if(op==='Binomial CDF')value=st.binomialCDF(num(0),num(1),num(2));else if(op==='Poisson PDF')value=st.poissonPDF(num(0),num(1));else if(op==='Poisson CDF')value=st.poissonCDF(num(0),num(1));else throw Error('Syntax ERROR');break;}
-case 'Tabela':value=m.makeTable(String(f[0]).replaceAll(',','.'),null,num(1),num(2),num(3),options);break;
-case 'Equação':value=l.polynomialRoots(f.map((_,i)=>num(i)));break;
+case 'Tabela':{let two=input.operation==='Duas funções';value=m.makeTable(String(f[0]).replaceAll(',','.'),two?String(f[1]).replaceAll(',','.'):null,num(two?2:1),num(two?3:2),num(two?4:3),options);break;}
+case 'Equação':{const op=input.operation||'Grau 2';if(op.startsWith('Sistema')){const n=Number(op.match(/[234]/)?.[0]);if(!n)throw Error('Syntax ERROR');const a=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>num(r*(n+1)+c))),b=Array.from({length:n},(_,r)=>num(r*(n+1)+n));value=l.solveSystem(a,b)}else value=l.polynomialRoots(f.map((_,i)=>num(i)));break;}
 case 'Desigualdade':value=m.solveInequality([num(0),num(1),num(2)],input.operation||'>=');break;
 case 'Proporção':value=m.solveProportion(num(0),num(1),num(2),input.operation||'D');break;
 case 'Integral':value=cal.integral(String(f[0]).replaceAll(',','.'),num(1),num(2),options);break;
@@ -760,7 +918,11 @@ case 'Derivada':value=cal.derivative(String(f[0]).replaceAll(',','.'),num(1),opt
 case 'Somatório':value=cal.summation(String(f[0]).replaceAll(',','.'),num(1),num(2),options);break;
 case 'CALC':value=require('solve.js').calculate(String(f[0]).replaceAll(',','.'),{x:num(1),A:num(2),B:num(3)},options);break;
 case 'SOLVE':value=require('solve.js').solve(String(f[0]).replaceAll(',','.'),'x',num(1),{A:num(2),B:num(3)},options);break;
+case 'DMS':{const sci=require('scientific.js');if(input.operation==='DMS → decimal'){const degrees=num(0);value=sci.fromDMS(Math.abs(degrees),num(1),num(2),degrees<0)}else value=sci.toDMS(num(0));break;}
+case 'FATOR':value=require('scientific.js').primeFactors(num(0));break;
+case 'ENG':value=require('scientific.js').engineering(num(0),num(1));break;
+case 'CONV':value=require('catalog.js').convert(input.operation,num(0));break;
 case 'Pol':value=require('scientific.js').polar(num(0),num(1),options.angle);break;
 case 'Rec':value=require('scientific.js').rectangular(num(0),num(1),options.angle);break;
 case 'Planilha':{const S=require('spreadsheet.js').Spreadsheet;let sheet=input.snapshot?S.fromSnapshot(JSON.parse(input.snapshot),options):new S(options);let cell=String(f[0]||'').toUpperCase();sheet.set(cell,String(f[1]||'').replaceAll(',','.'));value=sheet.value(cell);snapshot=JSON.stringify(sheet.snapshot());break;}
-default:throw Error('Modo não disponível');}const fmt=n=>typeof n==='number'?String(Number(n.toPrecision(10))).replace('.',','):String(n);let display;if(input.kind==='Complexos')display=fmt(value.re)+(value.im<0?' − ':' + ')+fmt(Math.abs(value.im))+'i';else if(input.kind==='Estatística')display='n='+fmt(value.n)+'  x̄='+fmt(value.mean)+'  σ='+fmt(value.populationSD);else if(input.kind==='Equação')display=value.map((z,i)=>'x'+(i+1)+'='+fmt(z.re)+(z.im?' '+(z.im<0?'−':'+')+' '+fmt(Math.abs(z.im))+'i':'')).join('  ');else if(input.kind==='SOLVE')display='x='+fmt(value.root)+'  L−R='+fmt(value.residual);else if(input.kind==='Pol')display='r='+fmt(value.radius)+'  θ='+fmt(value.angle);else if(input.kind==='Rec')display='x='+fmt(value.x)+'  y='+fmt(value.y);else if(input.kind==='Tabela')display=value.map(row=>fmt(row.x)+': '+row.values.map(fmt).join(' ')).join('  |  ');else if(input.kind==='Desigualdade')display=value.map(x=>(x.lowerInclusive?'[':'(')+(x.lower===null?'−∞':fmt(x.lower))+';'+(x.upper===null?'∞':fmt(x.upper))+(x.upperInclusive?']':')')).join(' ∪ ')||'∅';else if(Array.isArray(value))display=value.map(x=>Array.isArray(x)?x.map(fmt).join('  '):fmt(x)).join(' | ');else display=fmt(value);return JSON.stringify({ok:true,result:JSON.stringify(value),display,snapshot})}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}}})();
+default:throw Error('Modo não disponível');}const fmt=n=>typeof n==='number'?String(Number(n.toPrecision(10))).replace('.',','):String(n);let display;if(input.kind==='Complexos')display=fmt(value.re)+(value.im<0?' − ':' + ')+fmt(Math.abs(value.im))+'i';else if(input.kind==='Estatística')display=(input.operation||'1 variável')==='1 variável'?'n='+fmt(value.n)+'  x̄='+fmt(value.mean)+'  σ='+fmt(value.populationSD):'a='+fmt(value.a)+'  b='+fmt(value.b)+(value.c!==undefined?'  c='+fmt(value.c):'')+(Number.isFinite(value.r)?'  r='+fmt(value.r):'');else if(input.kind==='Equação')display=value.map((z,i)=>'x'+(i+1)+'='+(typeof z==='number'?fmt(z):fmt(z.re)+(z.im?' '+(z.im<0?'−':'+')+' '+fmt(Math.abs(z.im))+'i':''))).join('  ');else if(input.kind==='DMS' && typeof value==='object')display=(value.negative?'−':'')+fmt(value.degrees)+'° '+fmt(value.minutes)+'′ '+fmt(value.seconds)+'″';else if(input.kind==='FATOR')display=value.map(x=>fmt(x.prime)+(x.exponent>1?'^'+fmt(x.exponent):'')).join(' × ');else if(input.kind==='ENG')display=fmt(value.mantissa)+'×10^'+fmt(value.exponent);else if(input.kind==='SOLVE')display='x='+fmt(value.root)+'  L−R='+fmt(value.residual);else if(input.kind==='Pol')display='r='+fmt(value.radius)+'  θ='+fmt(value.angle);else if(input.kind==='Rec')display='x='+fmt(value.x)+'  y='+fmt(value.y);else if(input.kind==='Tabela')display=value.map(row=>fmt(row.x)+': '+row.values.map(fmt).join(' ')).join('  |  ');else if(input.kind==='Desigualdade')display=value.map(x=>(x.lowerInclusive?'[':'(')+(x.lower===null?'−∞':fmt(x.lower))+';'+(x.upper===null?'∞':fmt(x.upper))+(x.upperInclusive?']':')')).join(' ∪ ')||'∅';else if(Array.isArray(value))display=value.map(x=>Array.isArray(x)?x.map(fmt).join('  '):fmt(x)).join(' | ');else display=fmt(value);return JSON.stringify({ok:true,result:JSON.stringify(value),display,snapshot})}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}}})();

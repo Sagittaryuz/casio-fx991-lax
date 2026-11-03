@@ -16,7 +16,8 @@ jobs:
         run: |
           node ios/scripts/build-engine.mjs
           node ios/scripts/build-hp-digits.mjs
-          git diff --exit-code -- ios/Resources/engine.bundle.js ios/FX991/HPDigits.swift
+          node ios/scripts/build-catalog.mjs
+          git diff --exit-code -- ios/Resources/engine.bundle.js ios/FX991/HPDigits.swift ios/Resources/catalog.json
           node --test ios/tests/*.test.mjs
       - name: Build iOS simulator (no signing)
         run: xcodebuild -project ios/FX991.xcodeproj -scheme FX991 -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
