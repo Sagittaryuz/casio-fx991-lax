@@ -79,6 +79,13 @@ private enum Engine {
     ]
     private let sheetKey = "fx991lax.ios.sheet.v1"
     private let angleKey = "fx991lax.ios.angle.v1"
+    private struct ModeDraft {
+        var operation: String
+        var fields: [String]
+        var selected: Int
+        var result: String
+    }
+    private var modeDrafts: [String: ModeDraft] = [:]
     private var sheetSnapshot: String? = UserDefaults.standard.string(forKey: "fx991lax.ios.sheet.v1")
     @Published var status = "CALCULAR"
     @Published var calculating = false
@@ -164,7 +171,8 @@ private enum Engine {
         case "calc": openAdvanced(shift ? "SOLVE" : "CALC")
         case "+": if shift { openAdvanced("Pol") } else { insert("+") }
         case "-": if shift { openAdvanced("Rec") } else { insert("-") }
-        case "up", "down", "optn", "dms", "eng": status = "AINDA NÃO DISPONÍVEL"
+        case "up", "down": moveFraction(direction: action)
+        case "optn", "dms", "eng": status = "AINDA NÃO DISPONÍVEL"
         default: insert(action)
         }
     }
@@ -176,6 +184,7 @@ private enum Engine {
         else { openAdvanced(name) }
     }
     private func openAdvanced(_ name: String, operation: String? = nil) {
+        let draft = operation == nil ? modeDrafts[name] : nil
         let labels: [String: [String]] = [
             "Complexos": ["z₁", "z₂"], "Base-N": ["Valor", "Base origem", "Base destino"],
             "Matriz": ["a₁₁", "a₁₂", "a₂₁", "a₂₂"], "Vetor": ["A₁", "A₂", "A₃", "B₁", "B₂", "B₃"],
@@ -188,7 +197,7 @@ private enum Engine {
             "Pol": ["x", "y"], "Rec": ["r", "θ"]
         ]
         guard var names = labels[name] else { status = "AINDA NÃO DISPONÍVEL"; return }
-        let selected = operation ?? Self.operations[name]?.first ?? ""
+        let selected = operation ?? draft?.operation ?? Self.operations[name]?.first ?? ""
         if name == "Base-N" && selected != "Converter" { names = selected == "NOT" ? ["Valor", "Base"] : ["Valor A", "Valor B", "Base"] }
         if name == "Matriz" && ["Somar", "Multiplicar"].contains(selected) { names += ["b₁₁", "b₁₂", "b₂₁", "b₂₂"] }
         if name == "Vetor" && selected == "Norma" { names = ["A₁", "A₂", "A₃"] }
@@ -202,6 +211,9 @@ private enum Engine {
         else if name == "CALC" || name == "SOLVE" { advancedFields[0] = expression; advancedFields[1] = "0"; advancedFields[2] = "0"; advancedFields[3] = "0"; advancedIndex = 0 }
         else { advancedIndex = 0 }
         advancedResult = ""; status = "CALCULAR"
+        if let draft = draft, draft.fields.count == advancedFields.count {
+            advancedFields = draft.fields; advancedIndex = min(draft.selected, advancedFields.count - 1); advancedResult = draft.result
+        }
     }
     func selectAdvancedOperation(_ index: Int) {
         guard let kind = advancedMode, let options = Self.operations[kind], options.indices.contains(index) else { return }
@@ -226,7 +238,10 @@ private enum Engine {
             else { operationIndex = options.firstIndex(of:advancedOperation) ?? 0; operationsOpen = true }
             return
         }
-        if action == "menu" { advancedMode = nil; menuIndex = 0; menuVisible = true; return }
+        if action == "menu" {
+            modeDrafts[kind] = ModeDraft(operation:advancedOperation,fields:advancedFields,selected:advancedIndex,result:advancedResult)
+            advancedMode = nil; menuIndex = 0; menuVisible = true; return
+        }
         if action == "up" || action == "left" { advancedIndex = max(0, advancedIndex - 1); return }
         if action == "down" || action == "right" { advancedIndex = min(advancedFields.count - 1, advancedIndex + 1); return }
         if action == "equals" { runAdvanced(kind); return }
@@ -261,6 +276,21 @@ private enum Engine {
             }
         }
     }
+    private func moveFraction(direction: String) {
+        let chars = Array(expression), length = chars.count
+        var stack = [Int](), pairs = [Int: Int]()
+        for (index, char) in chars.enumerated() {
+            if char == "(" { stack.append(index) }
+            else if char == ")", let start = stack.popLast() { pairs[start] = index }
+        }
+        let candidates = pairs.compactMap { start, end -> (Int, Int, Int)? in
+            guard end + 2 < length, chars[end + 1] == "/", chars[end + 2] == "(",
+                  let denominatorEnd = pairs[end + 2], cursor >= start, cursor <= denominatorEnd + 1 else { return nil }
+            return (start, end, denominatorEnd)
+        }.sorted { ($0.2 - $0.0) < ($1.2 - $1.0) }
+        guard let fraction = candidates.first(where: { direction == "up" ? cursor >= $0.1 + 2 : cursor <= $0.1 + 1 }) else { status = "SEM FRAÇÃO SELECIONADA"; return }
+        cursor = direction == "up" ? fraction.1 : fraction.2
+    }
     private func insert(_ text: String) {
         if completed { expression = ["+", "-", "*", "/", "^"].contains(text) ? "Ans" : ""; cursor = expression.count; completed = false }
         cursor = max(0, min(cursor, expression.count))
@@ -294,6 +324,6 @@ private enum Engine {
         storePending = false; recallPending = false; completed = false; lastExact = nil; lastDecimal = "0"
         showExact = false; menuVisible = false; setupVisible = false; menuIndex = 0; calculating = false; status = "CALCULAR"
         advancedMode = nil; advancedFields = []; advancedLabels = []; advancedIndex = 0; advancedResult = ""; advancedOperation = ""; operationsOpen = false; operationIndex = 0
-        sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey)
+        modeDrafts.removeAll(); sheetSnapshot = nil; UserDefaults.standard.removeObject(forKey:sheetKey); UserDefaults.standard.removeObject(forKey:angleKey)
     }
 }

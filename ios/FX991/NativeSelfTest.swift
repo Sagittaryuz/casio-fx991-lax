@@ -13,6 +13,10 @@ import Foundation
             }
             failures.append("Timed out waiting for engine")
         }
+        for key in ["fraction", "1", "down", "2", "equals"] { calculator.press(key) }
+        await waitForResult()
+        if calculator.result != "1/2" { failures.append("Fraction expected 1/2, got \(calculator.result)") }
+        calculator.press("on")
         for key in ["7", "+", "8", "equals"] { calculator.press(key) }
         await waitForResult()
         if calculator.result != "15" { failures.append("7+8 expected 15, got \(calculator.result)") }
@@ -28,6 +32,8 @@ import Foundation
         await waitForResult()
         if calculator.advancedResult != "40" { failures.append("Sheet A1 expected 40, got \(calculator.advancedResult)") }
         if UserDefaults.standard.string(forKey:"fx991lax.ios.sheet.v1") == nil { failures.append("Sheet was not saved") }
+        calculator.press("menu"); calculator.press("4")
+        if calculator.advancedOperation != "Inversa" || calculator.advancedFields != ["1", "2", "3", "4"] { failures.append("Matrix state was not restored") }
         calculator.press("on")
         if calculator.result != "0" || calculator.advancedMode != nil || UserDefaults.standard.string(forKey:"fx991lax.ios.sheet.v1") != nil { failures.append("ON did not clear calculator state") }
         let output: [String: Any] = ["passed":failures.isEmpty, "failures":failures]
